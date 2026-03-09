@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meod Quest</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated;}
+:root{
+  --br:#7B3F00;--or:#E07B20;--or2:#9E4E00;--cr:#F5F0DC;--dk:#1a0a00;
+  --raso-sky1:#5BBFEA;--raso-sky2:#B8E8FF;
+  --fundo-sky1:#4A5568;--fundo-sky2:#B8860B;
+  --teo-sky1:#0D1B2A;--teo-sky2:#1A1A2E;
+}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Press Start 2P',monospace;background:#000;}
+#game{width:100vw;height:100vh;position:relative;overflow:hidden;}
+
+/* ════ SCENE (fills 100%) ════ */
+#scene-bg{position:absolute;inset:0;z-index:0;}
+#scene-bg svg{width:100%;height:100%;display:block;}
+
+/* ════ WEATHER ════ */
+#weather{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;}
+.rdrop{position:absolute;width:2px;background:linear-gradient(transparent,rgba(160,210,255,.55));pointer-events:none;}
+@keyframes rfall{from{top:-8%;}to{top:108%;}}
+@keyframes lflash{0%,84%,86%,100%{opacity:0;}85%{opacity:1;background:rgba(210,230,255,.2);}}
+
+/* ════ CHAR LAYER ════ */
+#chars{position:absolute;bottom:78px;left:0;right:0;z-index:7;pointer-events:none;display:flex;justify-content:space-between;align-items:flex-end;padding:0 clamp(16px,5vw,80px);}
+#char-l,#char-r{flex-shrink:0;}
+
+/* ════ GROUND ════ */
+#ground{position:absolute;bottom:0;left:0;right:0;z-index:6;pointer-events:none;}
+#ground svg{display:block;width:100%;height:85px;}
+
+/* ════ SCREENS ════ */
+.screen{position:absolute;inset:0;z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;}
+.screen.active{display:flex;}
+
+/* ════ MENU SCREEN ════ */
+#menu-screen{background:transparent;pointer-events:none;}
+.mc{pointer-events:all;display:flex;flex-direction:column;align-items:center;gap:13px;margin-top:-40px;}
+.logo{font-size:clamp(22px,5vw,46px);color:#fff;
+  text-shadow:5px 5px 0 var(--br),3px 3px 0 var(--or),-2px -2px 0 rgba(255,240,150,.25);
+  animation:logoF 3s ease-in-out infinite;text-align:center;letter-spacing:2px;}
+.tagline{font-size:clamp(6px,.9vw,8px);color:rgba(255,255,210,.9);text-shadow:2px 2px 0 rgba(0,0,0,.8);
+  margin:-4px 0 6px;text-align:center;letter-spacing:1px;}
+@keyframes logoF{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+
+/* ════ ANIMATED MENU BG ELEMENTS ════ */
+/* clouds drift across menu */
+.mcloud{position:absolute;z-index:1;pointer-events:none;opacity:.85;}
+.mcloud1{animation:cloudDrift1 22s linear infinite;}
+.mcloud2{animation:cloudDrift2 30s linear infinite;}
+.mcloud3{animation:cloudDrift3 26s linear infinite;}
+@keyframes cloudDrift1{from{transform:translateX(-220px);}to{transform:translateX(calc(100vw + 220px));}}
+@keyframes cloudDrift2{from{transform:translateX(-300px);}to{transform:translateX(calc(100vw + 300px));}}
+@keyframes cloudDrift3{from{transform:translateX(calc(100vw + 200px));}to{transform:translateX(-200px);}}
+/* floating stars on menu */
+.mstar{position:absolute;z-index:1;pointer-events:none;
+  width:4px;height:4px;background:#FFD700;border-radius:0;
+  animation:starTwinkle 2s steps(2) infinite;}
+@keyframes starTwinkle{0%,100%{opacity:1;}50%{opacity:.2;}}
+/* birds flying */
+.mbird{position:absolute;z-index:3;pointer-events:none;font-size:14px;
+  animation:birdFly 18s linear infinite;}
+@keyframes birdFly{from{transform:translateX(-60px) translateY(0);}
+  25%{transform:translateX(25vw) translateY(-15px);}
+  50%{transform:translateX(50vw) translateY(5px);}
+  75%{transform:translateX(75vw) translateY(-10px);}
+  to{transform:translateX(calc(100vw+60px)) translateY(0);}}
+
+/* ════ BUTTONS ════ */
+.pbtn{font-family:'Press Start 2P',monospace;font-size:clamp(8px,1.3vw,10px);
+  color:#fff;background:var(--or);border:none;padding:12px 26px;cursor:pointer;
+  border-bottom:6px solid var(--or2);border-right:4px solid var(--or2);
+  border-top:2px solid rgba(255,230,150,.3);border-left:2px solid rgba(255,230,150,.2);
+  box-shadow:4px 4px 0 rgba(0,0,0,.5);
+  transition:transform .08s,border-bottom-width .08s,box-shadow .08s;
+  min-width:200px;text-align:center;}
+.pbtn:hover{filter:brightness(1.12);}
+.pbtn:active{transform:translate(3px,4px);border-bottom-width:2px;border-right-width:1px;box-shadow:1px 1px 0 rgba(0,0,0,.4);}
+.pbtn-blue{background:#3949AB;border-bottom-color:#1a237e;border-right-color:#1a237e;}
+.pbtn-red{background:#C62828;border-bottom-color:#7f0000;border-right-color:#7f0000;}
+.pbtn-gray{background:#555;border-bottom-color:#222;border-right-color:#222;}
+.pbtn-green{background:#2E7D32;border-bottom-color:#1a4d1d;border-right-color:#1a4d1d;}
+.pbtn-gold{background:#E65100;border-bottom-color:#BF360C;border-right-color:#BF360C;}
+
+/* ════ MODAL BASE ════ */
+.modal-bg{position:absolute;inset:0;z-index:45;display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(4px);}
+.modal-bg.on{display:flex;}
+.mbox{background:var(--cr);border:5px solid var(--dk);box-shadow:10px 10px 0 var(--dk);
+  padding:28px 34px;display:flex;flex-direction:column;align-items:center;gap:12px;
+  max-width:500px;width:93%;animation:popIn .3s ease;}
+@keyframes popIn{from{transform:scale(.72);}to{transform:scale(1);}}
+.mbox-title{font-size:14px;color:var(--br);text-align:center;}
+.mbox-sub{font-size:6.5px;color:#777;text-align:center;}
+
+/* ════ DIFF SCREEN ════ */
+#diff-screen{background:rgba(0,0,0,.55);backdrop-filter:blur(4px);}
+.dpanel{background:var(--cr);border:5px solid var(--dk);box-shadow:10px 10px 0 var(--dk);
+  padding:26px 32px;display:flex;flex-direction:column;align-items:center;gap:11px;
+  max-width:500px;width:93%;}
+.dbtn{font-family:'Press Start 2P',monospace;width:100%;padding:12px 16px;
+  border:4px solid var(--dk);cursor:pointer;font-size:9px;line-height:1.8;
+  text-align:left;box-shadow:5px 5px 0 var(--dk);transition:transform .08s,box-shadow .08s;}
+.dbtn:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--dk);filter:brightness(1.07);}
+.dbtn:active{transform:translate(5px,5px);box-shadow:0 0 0 var(--dk);}
+.dbtn span{font-size:6px;display:block;margin-top:4px;opacity:.75;}
+.dbtn-raso{background:#A8E6CF;color:#0d3b24;}
+.dbtn-fundo{background:#FFD93D;color:#5a3600;}
+.dbtn-teo{background:#FF8A65;color:#5a1500;}
+
+/* ════ LEADERBOARD SCREEN ════ */
+#lb-screen{background:rgba(0,0,0,.6);backdrop-filter:blur(4px);}
+.lb-panel{background:var(--cr);border:5px solid var(--dk);box-shadow:12px 12px 0 var(--dk);
+  padding:26px 32px;max-width:560px;width:93%;display:flex;flex-direction:column;gap:12px;
+  max-height:88vh;overflow:hidden;}
+.lb-tabs{display:flex;gap:6px;}
+.lbtab{font-family:'Press Start 2P',monospace;font-size:7px;padding:8px 12px;
+  border:3px solid var(--dk);cursor:pointer;background:#ddd;color:var(--dk);
+  box-shadow:3px 3px 0 var(--dk);transition:all .08s;}
+.lbtab.active-raso{background:#A8E6CF;color:#0d3b24;}
+.lbtab.active-fundo{background:#FFD93D;color:#5a3600;}
+.lbtab.active-teo{background:#FF8A65;color:#5a1500;}
+.lb-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;min-height:200px;}
+.lb-row{display:flex;align-items:center;gap:8px;padding:8px 10px;
+  border:3px solid var(--dk);background:#fff;font-size:7.5px;color:var(--dk);}
+.lb-row.gold{background:#FFF9C4;border-color:#F9A825;}
+.lb-row.silver{background:#F5F5F5;border-color:#9E9E9E;}
+.lb-row.bronze{background:#FFF0E0;border-color:#A1887F;}
+.lb-rank{font-size:11px;min-width:28px;text-align:center;}
+.lb-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lb-pts{font-size:8px;color:var(--or2);min-width:56px;text-align:right;}
+.lb-time{font-size:6px;color:#888;min-width:42px;text-align:right;}
+.lb-empty{font-size:7px;color:#aaa;text-align:center;padding:28px;opacity:.7;}
+
+/* ════ HUD ════ */
+#hud{position:absolute;top:0;left:0;right:0;z-index:30;display:none;
+  padding:10px 16px;justify-content:space-between;align-items:center;
+  background:linear-gradient(180deg,rgba(0,0,0,.7) 0%,transparent 100%);}
+#hud.on{display:flex;}
+.hud-l,.hud-r{display:flex;align-items:center;gap:7px;}
+.heart{font-size:20px;filter:drop-shadow(0 2px 0 #8b0000);transition:all .25s;}
+.heart.dead{filter:grayscale(1) opacity(.25);transform:scale(.75);}
+.progbg{width:clamp(80px,12vw,120px);height:14px;background:#111;border:3px solid rgba(255,255,255,.28);overflow:hidden;}
+.progfill{height:100%;background:linear-gradient(90deg,#4CAF50,#8BC34A);transition:width .45s;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.2);}
+.qnum{font-size:7px;color:#fff;text-shadow:2px 2px 0 #000;}
+.dpill{font-size:6px;padding:3px 9px;border:2px solid rgba(255,255,255,.3);
+  color:#fff;background:rgba(0,0,0,.4);}
+/* Timer bar */
+#timer-bar-wrap{position:absolute;top:0;left:0;right:0;z-index:31;height:5px;display:none;}
+#timer-bar-wrap.on{display:block;}
+#timer-bar{height:5px;background:#FFD700;width:100%;transition:width .25s linear;
+  box-shadow:0 0 6px #FFD700;}
+
+/* ════ QUESTION AREA ════ */
+#q-wrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:min(95%,640px);z-index:25;display:none;animation:slideU .3s ease;}
+#q-wrap.on{display:block;}
+@keyframes slideU{from{transform:translate(-50%,-44%);opacity:0;}to{transform:translate(-50%,-50%);opacity:1;}}
+.qtype-lbl{font-size:clamp(9px,1.6vw,13px);color:#fff;
+  text-shadow:3px 3px 0 rgba(0,0,80,.85),-2px -2px 0 rgba(0,0,80,.5);
+  text-align:center;margin-bottom:10px;letter-spacing:2px;}
+.qbox{background:rgba(245,240,220,.97);border:5px solid var(--dk);
+  box-shadow:8px 8px 0 rgba(0,0,0,.65);}
+.qbox-inner{padding:20px 24px 16px;}
+.q-text{font-size:clamp(10px,1.6vw,13px);color:var(--dk);text-align:center;line-height:2.1;margin-bottom:16px;}
+.ogrid{display:grid;gap:9px;}
+.ogrid.two{grid-template-columns:1fr 1fr;}
+.ogrid.four{grid-template-columns:1fr 1fr;}
+.obt{font-family:'Press Start 2P',monospace;font-size:clamp(7.5px,1.15vw,10px);
+  padding:12px 8px;border:3px solid var(--dk);background:var(--cr);color:var(--dk);
+  cursor:pointer;box-shadow:4px 4px 0 rgba(0,0,0,.38);transition:transform .08s,box-shadow .08s,background .1s;
+  line-height:1.6;text-align:center;}
+.obt:hover:not(:disabled){background:#fff8d6;transform:translate(-2px,-2px);box-shadow:6px 6px 0 rgba(0,0,0,.38);}
+.obt:active:not(:disabled){transform:translate(3px,3px);box-shadow:1px 1px 0 rgba(0,0,0,.38);}
+.obt.tv{color:#C62828;font-size:clamp(12px,1.9vw,15px);}
+.obt.fv{color:#1a1a1a;font-size:clamp(12px,1.9vw,15px);}
+.obt.correct{background:#A8E6CF!important;border-color:#2e7d32!important;color:#0d3b24!important;transform:translate(-2px,-2px);box-shadow:6px 6px 0 #2e7d32!important;}
+.obt.wrong{background:#FFCCCC!important;border-color:#c62828!important;color:#5a0000!important;}
+.obt:disabled{cursor:default;}
+/* QUIT strip below options */
+.q-quit-strip{padding:10px 24px 14px;text-align:center;}
+.quit-inline{font-family:'Press Start 2P',monospace;font-size:6.5px;color:#888;
+  background:transparent;border:2px dashed #bbb;padding:5px 16px;cursor:pointer;
+  transition:color .12s,border-color .12s;}
+.quit-inline:hover{color:#C62828;border-color:#C62828;}
+
+/* ════ FEEDBACK ════ */
+#feedback{position:absolute;inset:0;z-index:40;display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.58);backdrop-filter:blur(2px);}
+#feedback.on{display:flex;}
+.fbcard{background:var(--cr);border:5px solid var(--dk);box-shadow:10px 10px 0 rgba(0,0,0,.65);
+  padding:26px 32px;text-align:center;max-width:490px;width:92%;animation:popIn .3s ease;}
+.fbbanner{padding:10px 18px;margin-bottom:14px;font-size:15px;letter-spacing:2px;border:3px solid var(--dk);}
+.fbbanner.ok{background:#A8E6CF;color:#0d3b24;}
+.fbbanner.bad{background:#FFCCCC;color:#5a0000;}
+.fb-explain{font-size:clamp(9px,1.45vw,12px);color:#333;line-height:2.1;margin-bottom:10px;text-align:left;}
+.fb-ref{font-size:clamp(7px,1.1vw,9px);color:#888;margin-bottom:16px;font-style:italic;}
+
+/* ════ SCORE POPUP ════ */
+.spop{position:absolute;z-index:35;font-family:'Press Start 2P',monospace;
+  pointer-events:none;animation:popfly 1.3s ease forwards;}
+@keyframes popfly{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-70px) scale(1.6);}}
+
+/* ════ NAME ENTRY MODAL ════ */
+#name-modal{z-index:60;}
+#name-input{font-family:'Press Start 2P',monospace;font-size:11px;
+  padding:10px 14px;border:4px solid var(--dk);background:#fff;color:var(--dk);
+  width:100%;box-shadow:inset 2px 2px 0 rgba(0,0,0,.15);outline:none;}
+#name-input:focus{border-color:var(--or);}
+
+/* ════ RESULT SCREEN ════ */
+#result-screen{background:rgba(0,0,0,.62);backdrop-filter:blur(4px);}
+.rescard{background:var(--cr);border:5px solid var(--dk);box-shadow:12px 12px 0 rgba(0,0,0,.65);
+  padding:30px 36px;text-align:center;max-width:530px;width:92%;animation:popIn .4s ease;}
+.res-icon{font-size:55px;margin-bottom:8px;}
+.res-title{font-size:clamp(12px,2.6vw,18px);color:var(--br);text-shadow:3px 3px 0 var(--or);margin-bottom:8px;}
+.res-stars{font-size:24px;margin-bottom:8px;letter-spacing:5px;}
+.res-score{font-size:clamp(9px,1.5vw,12px);color:var(--dk);margin-bottom:6px;}
+.res-pts{font-size:clamp(8px,1.3vw,10px);color:#555;margin-bottom:6px;}
+.res-verse{font-size:clamp(7.5px,1.2vw,9.5px);color:#555;line-height:2.2;
+  border-left:4px solid var(--or);padding:8px 14px;text-align:left;margin:8px 0 18px;}
+.res-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
+/* ════ LOADING ════ */
+#load-screen{background:#060614;z-index:100;}
+.load-title{font-size:clamp(20px,4.5vw,38px);color:var(--or);text-shadow:3px 3px 0 var(--br);
+  margin-bottom:22px;animation:logoF 1.5s ease-in-out infinite;}
+.lbar-bg{width:300px;height:20px;background:#111;border:4px solid var(--or2);max-width:88vw;}
+.lbar-fill{height:100%;background:var(--or);width:0%;transition:width .12s;}
+.load-txt{font-size:7px;color:#666;margin-top:12px;}
+
+/* ════ CHAR ANIMATIONS ════ */
+@keyframes breathe{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+@keyframes breatheR{0%,100%{transform:translateY(0) scaleX(-1);}50%{transform:translateY(-5px) scaleX(-1);}}
+</style>
+</head>
+<body>
+<div id="game">
+
+<!-- ══ SCENE BG (full 100% SVG) ══ -->
+<div id="scene-bg"></div>
+
+<!-- ══ WEATHER ══ -->
+<div id="weather"></div>
+
+<!-- ══ ANIMATED MENU ELEMENTS (clouds/birds injected by JS) ══ -->
+<div id="menu-anim" style="position:absolute;inset:0;z-index:3;pointer-events:none;"></div>
+
+<!-- ══ CHARACTERS ══ -->
+<div id="chars"><div id="char-l"></div><div id="char-r"></div></div>
+
+<!-- ══ GROUND ══ -->
+<div id="ground">
+<svg viewBox="0 0 800 85" preserveAspectRatio="none">
+  <rect x="0" y="0" width="800" height="1" fill="#81C784"/>
+  <rect x="0" y="1" width="800" height="14" fill="#4CAF50"/>
+  <rect x="0" y="6" width="800" height="4" fill="#66BB6A"/>
+  <rect x="0" y="15" width="800" height="70" fill="#8B5E3C"/>
+  <rect x="0" y="18" width="800" height="5" fill="#795548"/>
+  <rect x="10" y="24" width="56" height="14" fill="#7B5231" opacity=".42"/>
+  <rect x="84" y="24" width="56" height="14" fill="#7B5231" opacity=".42"/>
+  <rect x="158" y="24" width="56" height="14" fill="#7B5231" opacity=".42"/>
+  <rect x="232" y="24" width="56" height="14" fill="#7B5231" opacity=".42"/>
+  <rect x="306" y="24" width="56" height="14" fill="#7B5231" opacity=".42"/>
+  <rect x="380" y="24" width="56" height="14" fill="#7B5231" opacity=".42"/>
+  <rect x="454" y="24" width="56" height="14" fill="#7B5231" opacity=".42"/>
+  <rect x="528" y="24" width="56" height="14" fill="#7B5231" opacity=".42"/>
+  <rect x="602" y="24" width="56" height="14" fill="#7B5231" opacity=".42"/>
+  <rect x="676" y="24" width="56" height="14" fill="#7B5231" opacity=".42"/>
+  <rect x="47" y="40" width="56" height="13" fill="#7B5231" opacity=".32"/>
+  <rect x="121" y="40" width="56" height="13" fill="#7B5231" opacity=".32"/>
+  <rect x="195" y="40" width="56" height="13" fill="#7B5231" opacity=".32"/>
+  <rect x="269" y="40" width="56" height="13" fill="#7B5231" opacity=".32"/>
+  <rect x="343" y="40" width="56" height="13" fill="#7B5231" opacity=".32"/>
+  <rect x="417" y="40" width="56" height="13" fill="#7B5231" opacity=".32"/>
+  <rect x="491" y="40" width="56" height="13" fill="#7B5231" opacity=".32"/>
+  <rect x="565" y="40" width="56" height="13" fill="#7B5231" opacity=".32"/>
+  <rect x="639" y="40" width="56" height="13" fill="#7B5231" opacity=".32"/>
+  <rect x="713" y="40" width="56" height="13" fill="#7B5231" opacity=".32"/>
+</svg>
+</div>
+
+<!-- ══ TIMER BAR ══ -->
+<div id="timer-bar-wrap"><div id="timer-bar"></div></div>
+
+<!-- ══ HUD ══ -->
+<div id="hud">
+  <div class="hud-l">
+    <div id="lives-disp"></div>
+    <div class="dpill" id="dpill"></div>
+    <button id="mute-btn" onclick="G.toggleMute()" style="font-family:'Press Start 2P',monospace;font-size:9px;background:rgba(0,0,0,.4);border:2px solid rgba(255,255,255,.3);color:#fff;padding:4px 8px;cursor:pointer;">🔊</button>
+  </div>
+  <div class="hud-r">
+    <span class="qnum" id="qnum">1/10</span>
+    <div class="progbg"><div class="progfill" id="progfill" style="width:0%"></div></div>
+    <span style="font-size:18px;filter:drop-shadow(2px 2px 0 #7a5000)">⭐</span>
+  </div>
+</div>
+
+<!-- ══ QUESTION WRAP ══ -->
+<div id="q-wrap">
+  <div class="qtype-lbl" id="qtype-lbl"></div>
+  <div class="qbox">
+    <div class="qbox-inner">
+      <div class="q-text" id="q-text"></div>
+      <div class="ogrid" id="opts"></div>
+    </div>
+    <div class="q-quit-strip">
+      <button class="quit-inline" onclick="G.confirmQuit()">✕ desistir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FEEDBACK ══ -->
+<div id="feedback">
+  <div class="fbcard">
+    <div class="fbbanner" id="fb-banner"></div>
+    <div class="fb-explain" id="fb-explain"></div>
+    <div class="fb-ref" id="fb-ref"></div>
+    <button class="pbtn" id="fb-next" onclick="G.next()">PRÓXIMA ➜</button>
+  </div>
+</div>
+
+<!-- ══ PAUSE MODAL ══ -->
+<div id="pause-modal" class="modal-bg">
+  <div class="mbox">
+    <div class="mbox-title">⏸ DESISTIR?</div>
+    <div class="mbox-sub">Seu progresso desta partida será perdido.</div>
+    <button class="pbtn" onclick="G.resume()">▶ CONTINUAR</button>
+    <button class="pbtn pbtn-red" onclick="G.quit()">✕ SIM, DESISTIR</button>
+  </div>
+</div>
+
+<!-- ══ NAME ENTRY MODAL ══ -->
+<div id="name-modal" class="modal-bg">
+  <div class="mbox">
+    <div class="mbox-title">🏆 REGISTRAR PONTUAÇÃO</div>
+    <div class="mbox-sub" id="name-score-preview"></div>
+    <input id="name-input" maxlength="16" placeholder="SEU NOME..." autocomplete="off" spellcheck="false">
+    <button class="pbtn pbtn-green" onclick="G.saveName()">✓ SALVAR</button>
+    <button class="pbtn pbtn-gray" onclick="G.skipName()">PULAR</button>
+  </div>
+</div>
+
+<!-- ══ LOADING SCREEN ══ -->
+<div id="load-screen" class="screen active">
+  <div style="margin-bottom:14px;">
+    <svg viewBox="0 0 112 92" width="56" height="46" xmlns="http://www.w3.org/2000/svg" style="animation:logoF 1.5s ease-in-out infinite;filter:drop-shadow(0 0 14px rgba(74,144,212,0.9))">
+      <!-- Blue V shape -->
+      <polygon points="0,0 28,0 56,58 84,0 112,0 56,92" fill="#4A90D4"/>
+      <!-- Yellow lightning bolt -->
+      <polygon points="64,2 46,40 58,40 50,90 76,34 63,34 72,2" fill="#F5A623"/>
+    </svg>
+  </div>
+  <div class="load-title">MEOD QUEST</div>
+  <div class="lbar-bg"><div class="lbar-fill" id="lbar"></div></div>
+  <div class="load-txt" id="ltxt">Preparando as Escrituras...</div>
+</div>
+
+<!-- ══ MENU SCREEN ══ -->
+<div id="menu-screen" class="screen">
+  <div class="mc">
+    <div style="width:60px;height:50px;animation:logoF 2s ease-in-out infinite reverse;filter:drop-shadow(0 4px 12px rgba(74,144,212,0.8))">
+      <svg viewBox="0 0 112 92" width="60" height="50" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <!-- Blue V shape -->
+        <polygon points="0,0 28,0 56,58 84,0 112,0 56,92" fill="#4A90D4" filter="url(#glow)"/>
+        <!-- Yellow lightning bolt -->
+        <polygon points="64,2 46,40 58,40 50,90 76,34 63,34 72,2" fill="#F5A623" filter="url(#glow)"/>
+      </svg>
+    </div>
+    <div class="logo">MEOD QUEST</div>
+    <div class="tagline">Amarás ao Senhor com todo o teu Meod — Dt 6:5</div>
+    <button class="pbtn" onclick="G.showDiff()">▶ INICIAR JORNADA</button>
+    <button class="pbtn pbtn-gold" onclick="G.showLB()">🏆 LEADERBOARD</button>
+    <button class="pbtn pbtn-blue" onclick="G.showAbout()">📜 SOBRE O JOGO</button>
+  </div>
+</div>
+
+<!-- ══ DIFF SCREEN ══ -->
+<div id="diff-screen" class="screen">
+  <div class="dpanel">
+    <div class="mbox-title" style="font-size:13px;">⚔ ESCOLHA SEU NÍVEL</div>
+    <button class="dbtn dbtn-raso" onclick="G.start('raso')">🌅 RASO
+      <span>Aldeia bíblica ensolarada · Histórias clássicas · Verdadeiro/Falso</span>
+    </button>
+    <button class="dbtn dbtn-fundo" onclick="G.start('fundo')">🌧 FUNDO
+      <span>Deserto com tempestade · Narrativas e contexto · Múltipla escolha</span>
+    </button>
+    <button class="dbtn dbtn-teo" onclick="G.start('teologo')">⚡ TEÓLOGO
+      <span>Batalha épica no mar · Doutrina e hermenêutica · Múltipla escolha</span>
+    </button>
+    <button class="dbtn pbtn-gray" style="color:#fff;font-size:8.5px;" onclick="G.show('menu-screen')">← VOLTAR</button>
+  </div>
+</div>
+
+<!-- ══ LEADERBOARD SCREEN ══ -->
+<div id="lb-screen" class="screen">
+  <div class="lb-panel">
+    <div class="mbox-title" style="font-size:13px;">🏆 LEADERBOARD</div>
+    <div class="lb-tabs">
+      <button class="lbtab" id="lbtab-raso" onclick="G.lbTab('raso')">🌅 RASO</button>
+      <button class="lbtab" id="lbtab-fundo" onclick="G.lbTab('fundo')">🌧 FUNDO</button>
+      <button class="lbtab" id="lbtab-teologo" onclick="G.lbTab('teologo')">⚡ TEÓLOGO</button>
+    </div>
+    <div class="lb-list" id="lb-list"></div>
+    <button class="pbtn pbtn-blue" onclick="G.show('menu-screen')">← VOLTAR</button>
+  </div>
+</div>
+
+<!-- ══ RESULT SCREEN ══ -->
+<div id="result-screen" class="screen">
+  <div class="rescard">
+    <div class="res-icon" id="res-icon"></div>
+    <div class="res-title" id="res-title"></div>
+    <div class="res-stars" id="res-stars"></div>
+    <div class="res-score" id="res-score"></div>
+    <div class="res-pts" id="res-pts"></div>
+    <div class="res-verse" id="res-verse"></div>
+    <div class="res-btns">
+      <button class="pbtn pbtn-green" onclick="G.showDiff()">🔄 JOGAR NOVAMENTE</button>
+      <button class="pbtn pbtn-gold" onclick="G.showLBAfterGame()">🏆 VER RANKING</button>
+      <button class="pbtn pbtn-blue" onclick="G.show('menu-screen')">🏠 MENU</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ GAME SCREEN (transparent container) ══ -->
+<div id="game-screen" class="screen" style="pointer-events:none;background:transparent;"></div>
+
+</div><!-- #game -->
+
+<script>
+// ══════════════ AUDIO ENGINE ══════════════
+var Audio=(function(){
+  'use strict';
+  var ctx=null,masterGain=null,musicNode=null,musicGain=null,currentTheme=null;
+  var muted=false;
+
+  function ac(){
+    if(!ctx){try{ctx=new(window.AudioContext||window.webkitAudioContext)();masterGain=ctx.createGain();masterGain.gain.value=0.7;masterGain.connect(ctx.destination);}catch(e){}}
+    return ctx;
+  }
+  function mg(){ac();return masterGain;}
+
+  // ── Tone primitive ──
+  function tone(freq,dur,type,vol,delay,dest){
+    try{
+    var c=ac();if(!c)return;
+    var o=c.createOscillator(),g=c.createGain();
+    o.connect(g);g.connect(dest||mg());
+    o.type=type||'square';
+    if(Array.isArray(freq)){o.frequency.value=freq[0];freq.forEach(function(f,i){o.frequency.setValueAtTime(f,c.currentTime+(delay||0)+i*(dur/freq.length));});}
+    else o.frequency.value=freq;
+    var s=c.currentTime+(delay||0);
+    g.gain.setValueAtTime(0,s);g.gain.linearRampToValueAtTime(vol||0.12,s+0.01);
+    g.gain.exponentialRampToValueAtTime(0.001,s+dur);
+    o.start(s);o.stop(s+dur+0.05);
+    }catch(e){}
+  }
+
+  // ── Noise (for SFX) ──
+  function noise(dur,vol,delay,dest){
+    try{
+    var c=ac();if(!c)return;
+    var buf=c.createBuffer(1,c.sampleRate*dur,c.sampleRate);
+    var d=buf.getChannelData(0);
+    for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1);
+    var src=c.createBufferSource(),g=c.createGain(),flt=c.createBiquadFilter();
+    src.buffer=buf;flt.type='bandpass';flt.frequency.value=800;
+    src.connect(flt);flt.connect(g);g.connect(dest||mg());
+    var s=c.currentTime+(delay||0);
+    g.gain.setValueAtTime(vol||0.08,s);g.gain.exponentialRampToValueAtTime(0.001,s+dur);
+    src.start(s);src.stop(s+dur+0.05);
+    }catch(e){}
+  }
+
+  // ══ SFX per level ══
+  var SFX={
+    click:function(){tone(440,0.06,'square',0.07);},
+
+    // RASO: bright, warm, harp-like
+    correct_raso:function(){
+      tone(523,0.1,'sine',0.15);tone(659,0.1,'sine',0.15,0.1);tone(784,0.18,'sine',0.15,0.2);
+      tone(1047,0.22,'sine',0.1,0.28);
+    },
+    wrong_raso:function(){tone(280,0.12,'triangle',0.12);tone(210,0.25,'triangle',0.1,0.12);},
+    start_raso:function(){[392,523,659,784].forEach(function(f,i){tone(f,0.15,'sine',0.13,i*0.11);});},
+    victory_raso:function(){[523,659,784,1047,1319].forEach(function(f,i){tone(f,0.16,'sine',0.14,i*0.12);});},
+    fail_raso:function(){[330,262,220,196].forEach(function(f,i){tone(f,0.14,'triangle',0.1,i*0.1);});},
+    timer_raso:function(){tone(880,0.05,'sine',0.06);},
+
+    // FUNDO: dramatic, square/sawtooth, desert horn feel
+    correct_fundo:function(){
+      tone(392,0.08,'sawtooth',0.1);tone(494,0.08,'sawtooth',0.1,0.08);
+      tone(587,0.18,'sawtooth',0.12,0.16);noise(0.06,0.04,0.2);
+    },
+    wrong_fundo:function(){tone(220,0.15,'sawtooth',0.13);tone(185,0.3,'sawtooth',0.1,0.15);noise(0.1,0.06,0.05);},
+    start_fundo:function(){
+      noise(0.12,0.08);
+      [294,370,440].forEach(function(f,i){tone(f,0.18,'sawtooth',0.11,0.1+i*0.12);});
+    },
+    victory_fundo:function(){[294,370,440,587,740].forEach(function(f,i){tone(f,0.17,'sawtooth',0.12,i*0.13);});noise(0.15,0.07,0.5);},
+    fail_fundo:function(){[262,220,196,165].forEach(function(f,i){tone(f,0.16,'sawtooth',0.11,i*0.11);});noise(0.2,0.09,0.1);},
+    timer_fundo:function(){tone(440,0.06,'sawtooth',0.07);noise(0.04,0.03);},
+
+    // TEÓLOGO: epic, organ/choir-like, deep
+    correct_teologo:function(){
+      [523,659,784].forEach(function(f,i){tone(f,0.25,'square',0.09,i*0.06);});
+      tone(1047,0.3,'sine',0.1,0.15);tone(1319,0.25,'sine',0.08,0.3);
+    },
+    wrong_teologo:function(){
+      tone(196,0.18,'square',0.13);tone(185,0.35,'square',0.11,0.18);
+      noise(0.15,0.07,0.05);
+    },
+    start_teologo:function(){
+      noise(0.2,0.1);
+      [196,247,294,370,440].forEach(function(f,i){tone(f,0.22,'square',0.1,0.05+i*0.13);});
+    },
+    victory_teologo:function(){
+      [392,494,587,740,988].forEach(function(f,i){tone(f,0.2,'square',0.11,i*0.14);});
+      noise(0.3,0.1,0.6);
+    },
+    fail_teologo:function(){
+      [294,247,220,196,165].forEach(function(f,i){tone(f,0.18,'square',0.12,i*0.12);});
+      noise(0.25,0.1,0.08);
+    },
+    timer_teologo:function(){tone(330,0.07,'square',0.09);noise(0.05,0.04,0.03);},
+
+    correct:function(){var d=currentTheme;SFX['correct_'+(d||'raso')]();},
+    wrong:function(){var d=currentTheme;SFX['wrong_'+(d||'raso')]();},
+    start:function(d){SFX['start_'+(d||'raso')]();},
+    victory:function(){SFX['victory_'+(currentTheme||'raso')]();},
+    fail:function(){SFX['fail_'+(currentTheme||'raso')]();},
+    timerTick:function(){if(currentTheme)SFX['timer_'+currentTheme]();}
+  };
+
+  // ══ MUSIC ENGINE ══
+  // Each theme is a sequence of [freq, duration] pairs looped
+  var THEMES={
+    // Menu: warm pastoral, major pentatonic, gentle arpeggios
+    menu:{
+      bpm:88,
+      seqs:[
+        // Melody (sine, soft)
+        {type:'sine',vol:0.055,notes:[
+          [523,0.5],[659,0.5],[784,0.5],[880,0.5],[784,0.5],[659,0.5],[523,1.0],
+          [659,0.5],[784,0.5],[880,0.5],[1047,0.5],[880,0.5],[784,0.5],[659,1.0],
+          [523,0.5],[587,0.5],[659,0.5],[784,0.5],[659,0.75],[523,0.75],[440,1.0],
+          [0,0.5],[523,0.5],[587,0.25],[523,0.25],[494,0.5],[440,0.5],[392,1.5]
+        ]},
+        // Bass (triangle, low)
+        {type:'triangle',vol:0.04,notes:[
+          [131,1.0],[165,1.0],[196,1.0],[220,1.0],
+          [165,1.0],[131,1.0],[196,1.0],[165,1.0],
+          [131,1.0],[110,1.0],[131,1.0],[147,1.0],[165,2.0]
+        ]}
+      ]
+    },
+    // Raso: bright, folk/pastoral, major scale
+    raso:{
+      bpm:100,
+      seqs:[
+        {type:'sine',vol:0.06,notes:[
+          [784,0.25],[880,0.25],[1047,0.5],[880,0.5],[784,0.25],[659,0.25],[784,1.0],
+          [659,0.25],[784,0.25],[880,0.5],[1047,0.5],[880,0.25],[784,0.25],[659,1.0],
+          [523,0.5],[587,0.25],[659,0.25],[784,0.5],[659,0.5],[587,0.5],[523,1.0],
+          [0,0.25],[659,0.25],[784,0.25],[880,0.25],[1047,0.5],[880,0.5],[784,0.5],[659,0.5],[523,1.5]
+        ]},
+        {type:'triangle',vol:0.035,notes:[
+          [196,0.5],[196,0.5],[220,0.5],[220,0.5],
+          [196,0.5],[165,0.5],[196,1.0],
+          [131,0.5],[131,0.5],[147,0.5],[165,0.5],
+          [196,0.5],[220,0.5],[247,0.5],[196,0.5],[131,1.0]
+        ]}
+      ]
+    },
+    // Fundo: tense, minor, faster, battle drums feel
+    fundo:{
+      bpm:120,
+      seqs:[
+        {type:'sawtooth',vol:0.045,notes:[
+          [440,0.25],[392,0.25],[349,0.5],[330,0.5],[294,0.25],[330,0.25],[349,1.0],
+          [392,0.25],[440,0.25],[494,0.5],[523,0.5],[494,0.25],[440,0.25],[392,1.0],
+          [349,0.5],[330,0.25],[294,0.25],[262,0.5],[294,0.5],[330,0.5],[349,1.0],
+          [0,0.25],[392,0.25],[440,0.5],[494,0.5],[440,0.5],[392,0.5],[330,1.5]
+        ]},
+        {type:'square',vol:0.03,notes:[
+          [110,0.5],[110,0.5],[123,0.5],[123,0.5],
+          [110,0.5],[98,0.5],[110,1.0],
+          [98,0.5],[98,0.5],[110,0.5],[123,0.5],
+          [147,0.5],[123,0.5],[110,0.5],[98,0.5],[82,1.0]
+        ]}
+      ]
+    },
+    // Teólogo: epic, dramatic, minor, deep organ-like
+    teologo:{
+      bpm:72,
+      seqs:[
+        {type:'square',vol:0.05,notes:[
+          [294,0.5],[330,0.5],[349,1.0],[392,1.0],[349,0.5],[330,0.5],[294,2.0],
+          [262,0.5],[294,0.5],[330,1.0],[349,1.0],[330,0.5],[294,0.5],[262,2.0],
+          [220,1.0],[247,1.0],[262,1.0],[294,1.0],[262,1.0],[247,1.0],[220,2.0],
+          [0,1.0],[294,0.5],[330,0.5],[349,0.5],[392,0.5],[440,1.0],[392,0.5],[349,0.5],[330,0.5],[294,1.5]
+        ]},
+        {type:'triangle',vol:0.04,notes:[
+          [73,1.0],[82,1.0],[98,1.0],[110,1.0],
+          [98,1.0],[82,1.0],[73,2.0],
+          [65,1.0],[73,1.0],[82,1.0],[98,1.0],[73,2.0]
+        ]}
+      ]
+    },
+    // Result/Victory fanfare variation
+    result:{
+      bpm:108,
+      seqs:[
+        {type:'sine',vol:0.065,notes:[
+          [784,0.5],[880,0.5],[1047,1.0],[880,0.5],[784,0.5],[659,1.0],
+          [784,0.5],[880,0.5],[1047,1.0],[1175,0.5],[1047,0.5],[880,1.0],
+          [659,0.5],[784,0.5],[880,0.5],[784,0.5],[659,0.5],[587,0.5],[523,2.0]
+        ]}
+      ]
+    }
+  };
+
+  var scheduledNodes=[];
+  var loopTimeout=null;
+
+  function stopMusic(fade){
+    if(loopTimeout){clearTimeout(loopTimeout);loopTimeout=null;}
+    scheduledNodes.forEach(function(n){try{n.stop();}catch(e){}});
+    scheduledNodes=[];
+    if(musicGain && fade){
+      try{
+        var c=ac();if(c){
+          musicGain.gain.setValueAtTime(musicGain.gain.value,c.currentTime);
+          musicGain.gain.linearRampToValueAtTime(0,c.currentTime+0.5);
+        }
+      }catch(e){}
+    }
+    musicGain=null;
+  }
+
+  function playTheme(name){
+    if(muted)return;
+    try{
+    var c=ac();if(!c)return;
+    if(currentTheme===name&&musicGain)return; // already playing
+    stopMusic(true);
+    currentTheme=name;
+    var theme=THEMES[name];if(!theme)return;
+
+    musicGain=c.createGain();musicGain.gain.value=0;
+    musicGain.connect(mg());
+    // Fade in (setValueAtTime required before linearRamp)
+    musicGain.gain.setValueAtTime(0,c.currentTime);
+    musicGain.gain.linearRampToValueAtTime(1,c.currentTime+1.2);
+
+    function scheduleSeq(seq,startAt,loopLen){
+      var t=startAt;
+      seq.notes.forEach(function(note){
+        var freq=note[0],dur=note[1]*(60/theme.bpm);
+        if(freq>0){
+          var o=c.createOscillator(),g2=c.createGain();
+          o.connect(g2);g2.connect(musicGain);
+          o.type=seq.type;o.frequency.value=freq;
+          g2.gain.setValueAtTime(0,t);
+          g2.gain.linearRampToValueAtTime(seq.vol,t+0.02);
+          g2.gain.setValueAtTime(seq.vol,t+dur*0.7);
+          g2.gain.linearRampToValueAtTime(0,t+dur*0.95);
+          o.start(t);o.stop(t+dur+0.05);
+          scheduledNodes.push(o);
+        }
+        t+=dur;
+      });
+      return t-startAt; // return total duration
+    }
+
+    function loop(){
+      if(currentTheme!==name)return;
+      var now=c.currentTime+0.1;
+      var maxDur=0;
+      theme.seqs.forEach(function(seq){
+        var d=scheduleSeq(seq,now,0);
+        if(d>maxDur)maxDur=d;
+      });
+      loopTimeout=setTimeout(loop,(maxDur-0.3)*1000);
+    }
+    loop();
+    }catch(e){console.warn('Audio error:',e);}
+  }
+
+  function setMute(m){
+    var prev=currentTheme;
+    muted=m;
+    if(muted){
+      stopMusic(true);
+    } else {
+      // Re-play last theme — clear currentTheme so playTheme doesn't skip
+      currentTheme=null;
+      if(prev) playTheme(prev);
+    }
+  }
+  function toggleMute(){setMute(!muted);return muted;}
+  function isMuted(){return muted;}
+
+  return{
+    SFX:SFX,
+    play:playTheme,
+    stop:stopMusic,
+    toggleMute:toggleMute,
+    isMuted:isMuted,
+    setTheme:function(t){currentTheme=t;}
+  };
+})();
+var SFX=Audio.SFX;
+
+var G = (function(){
+'use strict';
+
+
+// ══════════════ LEADERBOARD STORAGE ══════════════
+var LB={
+  key:function(diff){return'mq_lb_'+diff;},
+  load:function(diff){try{return JSON.parse(localStorage.getItem(LB.key(diff)))||[];}catch(e){return[];}},
+  save:function(diff,arr){try{localStorage.setItem(LB.key(diff),JSON.stringify(arr));}catch(e){}},
+  add:function(diff,name,pts,secs){
+    var arr=LB.load(diff);
+    arr.push({name:name,pts:pts,secs:secs,date:new Date().toLocaleDateString('pt-BR')});
+    arr.sort(function(a,b){return b.pts-a.pts||(a.secs-b.secs);});
+    if(arr.length>20)arr=arr.slice(0,20);
+    LB.save(diff,arr);
+  }
+};
+
+// ══════════════ SCORING ══════════════
+function calcPts(correct,total,elapsed){
+  var base=correct*100;
+  // Time bonus: faster = more pts, up to 50pts per question
+  var avgSec=elapsed/Math.max(total,1);
+  var timeBonus=Math.max(0,Math.round((30-avgSec)*1.5*correct));
+  return base+timeBonus;
+}
+
+// ══════════════ SVG SCENES ══════════════
+var Scenes={
+  // ─── RASO: bright biblical village, full sky ───
+  raso:function(){
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">'
+    +'<defs>'
+    +'<linearGradient id="sky-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4AA8E0"/><stop offset="55%" stop-color="#7EC8F0"/><stop offset="100%" stop-color="#C0E8FF"/></linearGradient>'
+    +'<linearGradient id="ground-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5CB85C"/><stop offset="100%" stop-color="#388E3C"/></linearGradient>'
+    +'<linearGradient id="hill-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#66BB6A"/><stop offset="100%" stop-color="#43A047"/></linearGradient>'
+    +'</defs>'
+    // Sky
+    +'<rect width="800" height="500" fill="url(#sky-r)"/>'
+    // Sun
+    +'<circle cx="660" cy="85" r="50" fill="#FFD700" opacity=".15"/>'
+    +'<circle cx="660" cy="85" r="38" fill="#FFD700" opacity=".2"/>'
+    +'<circle cx="660" cy="85" r="28" fill="#FFE033" opacity=".95"/>'
+    // Sun rays
+    +'<rect x="657" y="44" width="6" height="20" fill="#FFD700" rx="3"/>'
+    +'<rect x="657" y="107" width="6" height="20" fill="#FFD700" rx="3"/>'
+    +'<rect x="616" y="82" width="20" height="6" fill="#FFD700" rx="3"/>'
+    +'<rect x="705" y="82" width="20" height="6" fill="#FFD700" rx="3"/>'
+    +'<rect x="629" y="53" width="14" height="5" fill="#FFD700" rx="2" transform="rotate(-45 636 55)"/>'
+    +'<rect x="686" y="53" width="14" height="5" fill="#FFD700" rx="2" transform="rotate(45 693 55)"/>'
+    +'<rect x="629" y="110" width="14" height="5" fill="#FFD700" rx="2" transform="rotate(45 636 113)"/>'
+    +'<rect x="686" y="110" width="14" height="5" fill="#FFD700" rx="2" transform="rotate(-45 693 113)"/>'
+    // Clouds
+    +'<g opacity=".92"><rect x="20" y="52" width="110" height="30" rx="15" fill="white"/><rect x="38" y="36" width="75" height="38" rx="19" fill="white"/><rect x="110" y="46" width="55" height="26" rx="13" fill="white"/></g>'
+    +'<g opacity=".85"><rect x="280" y="65" width="90" height="24" rx="12" fill="white"/><rect x="295" y="52" width="60" height="30" rx="15" fill="white"/></g>'
+    +'<g opacity=".8"><rect x="490" y="38" width="80" height="22" rx="11" fill="white"/><rect x="500" y="28" width="58" height="28" rx="14" fill="white"/></g>'
+    +'<g opacity=".7"><rect x="750" y="60" width="65" height="20" rx="10" fill="white"/><rect x="760" y="50" width="45" height="24" rx="12" fill="white"/></g>'
+    // Far green hills
+    +'<ellipse cx="100" cy="345" rx="220" ry="75" fill="url(#hill-r)" opacity=".55"/>'
+    +'<ellipse cx="700" cy="355" rx="240" ry="80" fill="#4CAF50" opacity=".5"/>'
+    +'<ellipse cx="400" cy="360" rx="280" ry="65" fill="#66BB6A" opacity=".45"/>'
+    +'<ellipse cx="550" cy="350" rx="200" ry="60" fill="#43A047" opacity=".4"/>'
+    +'<ellipse cx="200" cy="358" rx="180" ry="55" fill="#388E3C" opacity=".4"/>'
+    // Road/path
+    +'<path d="M340 490 Q360 420 380 380 Q400 340 420 310" stroke="#C8A96A" stroke-width="22" fill="none" opacity=".55"/>'
+    +'<path d="M340 490 Q360 420 380 380 Q400 340 420 310" stroke="#D4B87A" stroke-width="16" fill="none" opacity=".4"/>'
+    // HOUSE 1 (left) — stone house with flat roof
+    +'<rect x="30" y="255" width="75" height="65" fill="#D4B08C"/>'
+    +'<rect x="30" y="248" width="75" height="10" fill="#C4966A"/>'
+    +'<rect x="26" y="244" width="83" height="8" fill="#BF8A5C"/>'
+    +'<rect x="50" y="285" width="22" height="35" fill="#7B5231"/>'
+    +'<rect x="36" y="264" width="18" height="16" fill="#87CEEB" opacity=".85"/>'
+    +'<rect x="36" y="264" width="18" height="2" fill="#6BB0D0"/>'
+    +'<rect x="44" y="264" width="2" height="16" fill="#6BB0D0"/>'
+    +'<rect x="72" y="264" width="16" height="14" fill="#87CEEB" opacity=".75"/>'
+    // HOUSE 2 — arched doorway
+    +'<rect x="135" y="265" width="60" height="55" fill="#E5C99A"/>'
+    +'<rect x="135" y="257" width="60" height="11" fill="#D4A96A"/>'
+    +'<rect x="131" y="254" width="68" height="7" fill="#C4966A"/>'
+    +'<rect x="155" y="285" width="24" height="35" fill="#8B5E3C"/>'
+    +'<ellipse cx="167" cy="285" rx="12" ry="6" fill="#7B5231"/>'
+    +'<rect x="140" y="270" width="16" height="13" fill="#87CEEB" opacity=".8"/>'
+    +'<rect x="170" y="270" width="14" height="13" fill="#87CEEB" opacity=".75"/>'
+    // TENT / TABERNACLE center
+    +'<polygon points="290,235 430,235 470,320 250,320" fill="#F0DEB0"/>'
+    +'<polygon points="290,235 430,235 380,208" fill="#E8CC8C"/>'
+    +'<polygon points="290,235 380,208 300,235" fill="#DEB878"/>'
+    +'<rect x="338" y="253" width="30" height="67" fill="#C8A46E"/>'
+    +'<rect x="344" y="238" width="18" height="5" fill="#DAA520"/>'
+    +'<rect x="340" y="242" width="26" height="3" fill="#CD950C"/>'
+    // Tent ropes
+    +'<line x1="290" y1="235" x2="252" y2="290" stroke="#A08050" stroke-width="2" opacity=".7"/>'
+    +'<line x1="430" y1="235" x2="468" y2="290" stroke="#A08050" stroke-width="2" opacity=".7"/>'
+    // WELL
+    +'<rect x="510" y="280" width="45" height="32" fill="#A0A0A0" rx="2"/>'
+    +'<rect x="506" y="275" width="53" height="9" fill="#808080"/>'
+    +'<rect x="508" y="250" width="5" height="30" fill="#6D4C41"/>'
+    +'<rect x="548" y="250" width="5" height="30" fill="#6D4C41"/>'
+    +'<rect x="508" y="246" width="45" height="7" fill="#5D4037"/>'
+    +'<rect x="524" y="284" width="18" height="12" fill="#90CAF9" opacity=".75"/>'
+    +'<rect x="521" y="254" width="5" height="18" fill="#9E9E9E"/>'
+    +'<ellipse cx="523" cy="254" rx="5" ry="4" fill="#BDBDBD"/>'
+    // PALM TREE right
+    +'<rect x="600" y="218" width="12" height="90" fill="#A0522D"/>'
+    +'<rect x="600" y="218" width="12" height="20" fill="#8B4513"/>'
+    +'<ellipse cx="606" cy="214" rx="32" ry="16" fill="#2E7D32"/>'
+    +'<ellipse cx="580" cy="222" rx="24" ry="11" fill="#388E3C"/>'
+    +'<ellipse cx="632" cy="222" rx="24" ry="11" fill="#388E3C"/>'
+    +'<ellipse cx="606" cy="230" rx="20" ry="8" fill="#43A047"/>'
+    +'<ellipse cx="600" cy="200" rx="8" ry="6" fill="#FF8F00" opacity=".6"/>'
+    // BUSHES
+    +'<ellipse cx="200" cy="316" rx="25" ry="16" fill="#388E3C"/>'
+    +'<ellipse cx="188" cy="319" rx="18" ry="13" fill="#4CAF50"/>'
+    +'<ellipse cx="215" cy="320" rx="16" ry="12" fill="#43A047"/>'
+    +'<ellipse cx="550" cy="312" rx="28" ry="17" fill="#2E7D32"/>'
+    +'<ellipse cx="565" cy="315" rx="20" ry="14" fill="#388E3C"/>'
+    +'<ellipse cx="540" cy="318" rx="16" ry="12" fill="#4CAF50"/>'
+    // Small flowers
+    +'<circle cx="480" cy="318" r="4" fill="#FFD700"/><circle cx="480" cy="318" r="2" fill="#FF8F00"/>'
+    +'<circle cx="495" cy="322" r="3" fill="#FF80AB"/><circle cx="495" cy="322" r="1.5" fill="#F06292"/>'
+    +'<circle cx="155" cy="324" r="4" fill="#FFD700"/><circle cx="155" cy="324" r="2" fill="#FF8F00"/>'
+    +'</svg>';
+  },
+
+  // ─── FUNDO: Desert with storm clouds forming ───
+  fundo:function(){
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">'
+    +'<defs>'
+    +'<linearGradient id="sky-f" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2D3748"/><stop offset="35%" stop-color="#4A5568"/><stop offset="65%" stop-color="#718096"/><stop offset="100%" stop-color="#C4A044"/></linearGradient>'
+    +'<linearGradient id="sand-f" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#C8A060"/><stop offset="100%" stop-color="#A07830"/></linearGradient>'
+    +'</defs>'
+    // Sky
+    +'<rect width="800" height="500" fill="url(#sky-f)"/>'
+    // Sun peeking through storm
+    +'<circle cx="690" cy="115" r="50" fill="#DAA520" opacity=".12"/>'
+    +'<circle cx="690" cy="115" r="34" fill="#DAA520" opacity=".22"/>'
+    +'<circle cx="690" cy="115" r="22" fill="#DAA520" opacity=".45"/>'
+    // Storm clouds — big and dramatic, covering most of sky
+    +'<ellipse cx="120" cy="85" rx="175" ry="68" fill="#1A202C" opacity=".92"/>'
+    +'<ellipse cx="80" cy="105" rx="140" ry="58" fill="#0D1117" opacity=".88"/>'
+    +'<ellipse cx="200" cy="95" rx="145" ry="62" fill="#2D3748" opacity=".85"/>'
+    +'<ellipse cx="350" cy="75" rx="195" ry="72" fill="#1A202C" opacity=".9"/>'
+    +'<ellipse cx="320" cy="100" rx="165" ry="65" fill="#0D1117" opacity=".85"/>'
+    +'<ellipse cx="500" cy="88" rx="170" ry="66" fill="#2D3748" opacity=".82"/>'
+    +'<ellipse cx="480" cy="110" rx="140" ry="58" fill="#1A202C" opacity=".8"/>'
+    +'<ellipse cx="650" cy="80" rx="155" ry="62" fill="#2D3748" opacity=".7"/>'
+    // Lightning bolts
+    +'<polyline points="180,128 168,178 186,178 160,248" stroke="#FFE066" stroke-width="3.5" fill="none" opacity=".82"/>'
+    +'<polyline points="183,128 171,178 189,178 163,248" stroke="white" stroke-width="1.5" fill="none" opacity=".45"/>'
+    +'<polyline points="450,112 438,162 454,162 432,232" stroke="#FFE066" stroke-width="3" fill="none" opacity=".7"/>'
+    +'<polyline points="453,112 441,162 457,162 435,232" stroke="white" stroke-width="1.2" fill="none" opacity=".35"/>'
+    +'<polyline points="620,100 612,140 624,140 610,185" stroke="#FFE066" stroke-width="2.5" fill="none" opacity=".5"/>'
+    // Distant horizon glow (sunset through storm)
+    +'<rect x="0" y="370" width="800" height="40" fill="#C8860A" opacity=".3"/>'
+    +'<rect x="0" y="380" width="800" height="30" fill="#DAA520" opacity=".18"/>'
+    // Sand dunes — big, covering full base
+    +'<ellipse cx="0" cy="390" rx="220" ry="80" fill="url(#sand-f)" opacity=".9"/>'
+    +'<ellipse cx="180" cy="370" rx="240" ry="75" fill="#C8A060" opacity=".85"/>'
+    +'<ellipse cx="420" cy="360" rx="280" ry="80" fill="#B8903A" opacity=".9"/>'
+    +'<ellipse cx="640" cy="375" rx="260" ry="78" fill="#C8A060" opacity=".88"/>'
+    +'<ellipse cx="820" cy="390" rx="220" ry="80" fill="url(#sand-f)" opacity=".9"/>'
+    +'<ellipse cx="100" cy="400" rx="180" ry="60" fill="#D4B070" opacity=".7"/>'
+    +'<ellipse cx="550" cy="385" rx="200" ry="65" fill="#B8903A" opacity=".7"/>'
+    // Rocky outcrops
+    +'<ellipse cx="55" cy="306" rx="52" ry="34" fill="#546E7A"/>'
+    +'<ellipse cx="70" cy="298" rx="36" ry="24" fill="#607D8B"/>'
+    +'<ellipse cx="42" cy="312" rx="28" ry="20" fill="#455A64"/>'
+    +'<ellipse cx="720" cy="300" rx="55" ry="36" fill="#546E7A"/>'
+    +'<ellipse cx="740" cy="292" rx="38" ry="26" fill="#607D8B"/>'
+    +'<ellipse cx="712" cy="308" rx="30" ry="22" fill="#455A64"/>'
+    +'<ellipse cx="350" cy="320" rx="40" ry="26" fill="#546E7A" opacity=".8"/>'
+    +'<ellipse cx="365" cy="312" rx="28" ry="18" fill="#607D8B" opacity=".8"/>'
+    // Dead tree center
+    +'<rect x="305" y="228" width="9" height="92" fill="#3E2723"/>'
+    +'<rect x="268" y="255" width="38" height="5" fill="#3E2723"/>'
+    +'<rect x="314" y="243" width="32" height="4" fill="#3E2723"/>'
+    +'<rect x="272" y="268" width="22" height="3" fill="#3E2723"/>'
+    +'<rect x="312" y="262" width="18" height="3" fill="#3E2723"/>'
+    +'<rect x="300" y="275" width="14" height="3" fill="#3E2723"/>'
+    // Ancient ruins — broken pillars
+    +'<rect x="470" y="245" width="22" height="75" fill="#9E9E9E" opacity=".82"/>'
+    +'<rect x="467" y="240" width="28" height="11" fill="#BDBDBD" opacity=".75"/>'
+    +'<rect x="467" y="314" width="28" height="6" fill="#757575" opacity=".7"/>'
+    +'<rect x="510" y="258" width="20" height="62" fill="#9E9E9E" opacity=".75"/>'
+    +'<rect x="507" y="253" width="26" height="10" fill="#BDBDBD" opacity=".68"/>'
+    +'<rect x="538" y="270" width="18" height="50" fill="#8E8E8E" opacity=".7"/>'
+    +'<rect x="535" y="265" width="24" height="9" fill="#BDBDBD" opacity=".62"/>'
+    // Scattered rubble
+    +'<rect x="468" y="320" width="100" height="8" fill="#757575" opacity=".6"/>'
+    +'<rect x="480" y="326" width="14" height="5" fill="#616161" opacity=".6"/>'
+    +'<rect x="520" y="324" width="20" height="6" fill="#616161" opacity=".55"/>'
+    // Distant tents in dust
+    +'<polygon points="130,295 182,295 156,260" fill="#8B6914" opacity=".6"/>'
+    +'<polygon points="185,300 232,300 208,267" fill="#9E8020" opacity=".55"/>'
+    +'<rect x="156" y="267" width="3" height="28" fill="#7A5C10" opacity=".5"/>'
+    // Dust haze near horizon
+    +'<rect x="0" y="360" width="800" height="20" fill="#C8A060" opacity=".25"/>'
+    +'<rect x="0" y="350" width="800" height="14" fill="#B89050" opacity=".15"/>'
+    +'</svg>';
+  },
+
+  // ─── TEÓLOGO: Epic sea battle at night ───
+  teologo:function(){
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">'
+    +'<defs>'
+    +'<linearGradient id="sky-t" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050912"/><stop offset="40%" stop-color="#0D1B2A"/><stop offset="70%" stop-color="#1A2040"/><stop offset="100%" stop-color="#12192A"/></linearGradient>'
+    +'<linearGradient id="sea-t" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0A2A4A"/><stop offset="100%" stop-color="#04101C"/></linearGradient>'
+    +'<radialGradient id="moon-halo" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FFF9C4" stop-opacity=".45"/><stop offset="60%" stop-color="#FFF9C4" stop-opacity=".12"/><stop offset="100%" stop-color="transparent"/></radialGradient>'
+    +'<radialGradient id="fire-glow" cx="50%" cy="40%" r="50%"><stop offset="0%" stop-color="#FF6D00" stop-opacity=".7"/><stop offset="100%" stop-color="transparent"/></radialGradient>'
+    +'</defs>'
+    // Sky
+    +'<rect width="800" height="500" fill="url(#sky-t)"/>'
+    // Moon halo + moon
+    +'<circle cx="130" cy="80" r="70" fill="url(#moon-halo)"/>'
+    +'<circle cx="130" cy="80" r="36" fill="#FFF9C4" opacity=".9"/>'
+    +'<circle cx="144" cy="70" r="24" fill="#0D1B2A" opacity=".65"/>'
+    // Stars — lots of them
+    +'<rect x="220" y="18" width="3" height="3" fill="white" opacity=".9"/>'
+    +'<rect x="300" y="30" width="2" height="2" fill="white" opacity=".8"/>'
+    +'<rect x="380" y="15" width="3" height="3" fill="white" opacity=".85"/>'
+    +'<rect x="460" y="28" width="2" height="2" fill="white" opacity=".7"/>'
+    +'<rect x="540" y="12" width="3" height="3" fill="white" opacity=".9"/>'
+    +'<rect x="620" y="35" width="2" height="2" fill="white" opacity=".75"/>'
+    +'<rect x="700" y="20" width="3" height="3" fill="white" opacity=".85"/>'
+    +'<rect x="760" y="45" width="2" height="2" fill="white" opacity=".65"/>'
+    +'<rect x="260" y="50" width="2" height="2" fill="white" opacity=".6"/>'
+    +'<rect x="340" y="42" width="2" height="2" fill="white" opacity=".7"/>'
+    +'<rect x="420" y="55" width="2" height="2" fill="white" opacity=".6"/>'
+    +'<rect x="500" y="40" width="2" height="2" fill="white" opacity=".65"/>'
+    +'<rect x="580" y="55" width="2" height="2" fill="white" opacity=".55"/>'
+    +'<rect x="660" y="48" width="2" height="2" fill="white" opacity=".6"/>'
+    +'<rect x="185" y="38" width="1" height="1" fill="white" opacity=".5"/>'
+    +'<rect x="450" y="12" width="1" height="1" fill="white" opacity=".5"/>'
+    +'<rect x="600" y="20" width="1" height="1" fill="white" opacity=".5"/>'
+    +'<rect x="740" y="58" width="1" height="1" fill="white" opacity=".45"/>'
+    // Dark storm clouds (threatening)
+    +'<ellipse cx="380" cy="75" rx="240" ry="75" fill="#050912" opacity=".88"/>'
+    +'<ellipse cx="340" cy="95" rx="210" ry="65" fill="#020608" opacity=".85"/>'
+    +'<ellipse cx="580" cy="85" rx="230" ry="72" fill="#050912" opacity=".8"/>'
+    +'<ellipse cx="560" cy="108" rx="190" ry="62" fill="#020608" opacity=".75"/>'
+    +'<ellipse cx="650" cy="70" rx="160" ry="58" fill="#0A1020" opacity=".65"/>'
+    // Lightning bolts — dramatic
+    +'<polyline points="310,128 295,182 316,182 290,265" stroke="#FFE066" stroke-width="4.5" fill="none" opacity=".88"/>'
+    +'<polyline points="313,128 298,182 319,182 293,265" stroke="white" stroke-width="2" fill="none" opacity=".5"/>'
+    +'<polyline points="560,110 548,160 565,160 545,228" stroke="#FFE066" stroke-width="3.5" fill="none" opacity=".75"/>'
+    +'<polyline points="563,110 551,160 568,160 548,228" stroke="white" stroke-width="1.5" fill="none" opacity=".4"/>'
+    +'<polyline points="700,95 692,132 702,132 690,172" stroke="#FFE066" stroke-width="2.5" fill="none" opacity=".55"/>'
+    // SEA — takes up bottom portion
+    +'<rect x="0" y="255" width="800" height="245" fill="url(#sea-t)"/>'
+    // Wave layers
+    +'<path d="M0,268 Q32,250 64,268 Q96,286 128,268 Q160,250 192,268 Q224,286 256,268 Q288,250 320,268 Q352,286 384,268 Q416,250 448,268 Q480,286 512,268 Q544,250 576,268 Q608,286 640,268 Q672,250 704,268 Q736,286 768,268 Q784,277 800,268" stroke="#1565C0" stroke-width="7" fill="none" opacity=".85"/>'
+    +'<path d="M0,286 Q40,266 80,286 Q120,306 160,286 Q200,266 240,286 Q280,306 320,286 Q360,266 400,286 Q440,306 480,286 Q520,266 560,286 Q600,306 640,286 Q680,266 720,286 Q760,306 800,286" stroke="#1976D2" stroke-width="6" fill="none" opacity=".75"/>'
+    +'<path d="M0,305 Q36,284 72,305 Q108,326 144,305 Q180,284 216,305 Q252,326 288,305 Q324,284 360,305 Q396,326 432,305 Q468,284 504,305 Q540,326 576,305 Q612,284 648,305 Q684,326 720,305 Q756,284 800,305" stroke="#0D47A1" stroke-width="5" fill="none" opacity=".65"/>'
+    // Whitecaps
+    +'<path d="M15,266 Q28,258 42,266" stroke="white" stroke-width="3" fill="none" opacity=".65"/>'
+    +'<path d="M128,270 Q144,260 160,270" stroke="white" stroke-width="3" fill="none" opacity=".6"/>'
+    +'<path d="M260,264 Q280,254 300,264" stroke="white" stroke-width="3" fill="none" opacity=".55"/>'
+    +'<path d="M410,268 Q432,258 454,268" stroke="white" stroke-width="3" fill="none" opacity=".6"/>'
+    +'<path d="M568,265 Q590,255 612,265" stroke="white" stroke-width="3" fill="none" opacity=".55"/>'
+    +'<path d="M700,270 Q722,260 744,270" stroke="white" stroke-width="3" fill="none" opacity=".5"/>'
+    // SHIP being tossed
+    +'<g transform="translate(380,245) rotate(-7)">'
+    +'<rect x="-68" y="-2" width="136" height="26" fill="#6D4C41" rx="5"/>'
+    +'<rect x="-60" y="-5" width="120" height="8" fill="#5D4037"/>'
+    +'<rect x="-58" y="4" width="12" height="14" fill="#795548" opacity=".5"/>'
+    +'<rect x="-8" y="-62" width="7" height="66" fill="#4A3728"/>'
+    // Main sail
+    +'<polygon points="-8,-62 52,-38 -8,-10" fill="#F5F5DC" opacity=".88"/>'
+    +'<polygon points="-8,-62 -55,-34 -8,-8" fill="#EDE8D0" opacity=".8"/>'
+    // Cross on sail
+    +'<rect x="4" y="-50" width="3" height="30" fill="#C62828" opacity=".7"/>'
+    +'<rect x="-5" y="-40" width="18" height="3" fill="#C62828" opacity=".7"/>'
+    // Flag
+    +'<rect x="-8" y="-62" width="14" height="5" fill="#C62828" opacity=".85"/>'
+    +'</g>'
+    // ROCKY CLIFFS on both sides — fully filled
+    +'<polygon points="0,220 0,500 130,500 130,270 90,245 50,220" fill="#1C2833"/>'
+    +'<polygon points="0,220 50,220 90,245 130,270 130,500 0,500" fill="#263238"/>'
+    +'<polygon points="0,230 55,230 85,252 125,278 125,500 0,500" fill="#2E3B43" opacity=".7"/>'
+    // Left cliff face detail
+    +'<polygon points="30,240 70,240 85,258 40,268" fill="#37474F" opacity=".8"/>'
+    +'<polygon points="0,280 45,260 75,280 50,295 0,295" fill="#455A64" opacity=".6"/>'
+    // Right cliff
+    +'<polygon points="800,215 800,500 670,500 670,265 710,240 760,215" fill="#1C2833"/>'
+    +'<polygon points="800,215 760,215 710,240 670,265 670,500 800,500" fill="#263238"/>'
+    +'<polygon points="800,228 745,228 715,252 675,278 675,500 800,500" fill="#2E3B43" opacity=".7"/>'
+    // Right cliff face detail
+    +'<polygon points="770,238 730,238 715,256 760,268" fill="#37474F" opacity=".8"/>'
+    +'<polygon points="800,275 755,258 725,278 750,292 800,292" fill="#455A64" opacity=".6"/>'
+    // Torches on cliffs
+    +'<rect x="72" y="202" width="7" height="18" fill="#795548"/>'
+    +'<ellipse cx="75" cy="202" rx="8" ry="12" fill="url(#fire-glow)"/>'
+    +'<ellipse cx="75" cy="198" rx="5" ry="8" fill="#FF6D00" opacity=".9"/>'
+    +'<ellipse cx="75" cy="194" rx="3" ry="5" fill="#FFD600" opacity=".85"/>'
+    +'<rect x="712" y="198" width="7" height="18" fill="#795548"/>'
+    +'<ellipse cx="715" cy="198" rx="8" ry="12" fill="url(#fire-glow)"/>'
+    +'<ellipse cx="715" cy="194" rx="5" ry="8" fill="#FF6D00" opacity=".9"/>'
+    +'<ellipse cx="715" cy="190" rx="3" ry="5" fill="#FFD600" opacity=".85"/>'
+    // Moon reflection on water
+    +'<ellipse cx="130" cy="330" rx="40" ry="80" fill="#FFF9C4" opacity=".06"/>'
+    +'<ellipse cx="130" cy="380" rx="20" ry="60" fill="#FFF9C4" opacity=".04"/>'
+    +'</svg>';
+  }
+};
+
+// ══════════════ CHARACTERS ══════════════
+var Chars={
+  prophetL:function(){
+    return '<svg width="80" height="130" viewBox="0 0 20 32" style="animation:breathe 2.5s ease-in-out infinite;filter:drop-shadow(3px 4px 0 rgba(0,0,0,.6))">'
+    +'<rect x="16" y="2" width="2" height="22" fill="#8B5E3C"/>'
+    +'<rect x="15" y="2" width="4" height="2" fill="#A0724A"/>'
+    +'<rect x="14" y="3" width="2" height="4" fill="#8B5E3C"/>'
+    +'<rect x="4" y="14" width="10" height="14" fill="#7986CB"/>'
+    +'<rect x="3" y="16" width="12" height="9" fill="#5C6BC0"/>'
+    +'<rect x="4" y="26" width="3" height="5" fill="#5C6BC0"/>'
+    +'<rect x="11" y="26" width="3" height="5" fill="#5C6BC0"/>'
+    +'<rect x="3" y="21" width="12" height="2" fill="#FFD700"/>'
+    +'<rect x="5" y="6" width="8" height="8" fill="#FFCC80"/>'
+    +'<rect x="4" y="4" width="10" height="4" fill="#EF9A9A"/>'
+    +'<rect x="5" y="2" width="8" height="3" fill="#E57373"/>'
+    +'<rect x="6" y="1" width="6" height="2" fill="#EF9A9A"/>'
+    +'<rect x="7" y="9" width="2" height="2" fill="#3E2723"/>'
+    +'<rect x="10" y="9" width="2" height="2" fill="#3E2723"/>'
+    +'<rect x="7" y="8" width="2" height="1" fill="#5D4037"/>'
+    +'<rect x="10" y="8" width="2" height="1" fill="#5D4037"/>'
+    +'<rect x="6" y="13" width="6" height="2" fill="#E0C080"/>'
+    +'<rect x="7" y="15" width="4" height="1" fill="#D4AA60"/>'
+    +'<rect x="2" y="14" width="3" height="7" fill="#7986CB"/>'
+    +'<rect x="13" y="14" width="3" height="7" fill="#7986CB"/>'
+    +'<rect x="2" y="20" width="3" height="2" fill="#FFCC80"/>'
+    +'<rect x="13" y="20" width="3" height="2" fill="#FFCC80"/>'
+    +'<rect x="0" y="18" width="5" height="5" fill="#FFF9C4"/>'
+    +'<rect x="0" y="18" width="5" height="1" fill="#F9A825"/>'
+    +'<rect x="0" y="22" width="5" height="1" fill="#F9A825"/>'
+    +'<rect x="1" y="19" width="3" height="1" fill="#9E9E9E"/>'
+    +'<rect x="1" y="21" width="3" height="1" fill="#9E9E9E"/>'
+    +'</svg>';
+  },
+  shepherdR:function(){
+    return '<svg width="80" height="130" viewBox="0 0 20 32" style="animation:breatheR 2s ease-in-out infinite;animation-delay:.4s;filter:drop-shadow(-3px 4px 0 rgba(0,0,0,.6))">'
+    +'<rect x="2" y="3" width="2" height="22" fill="#8B5E3C"/>'
+    +'<path d="M2,3 Q2,0 6,0 Q10,0 10,3" stroke="#8B5E3C" stroke-width="2" fill="none"/>'
+    +'<rect x="6" y="14" width="9" height="14" fill="#A5D6A7"/>'
+    +'<rect x="5" y="16" width="11" height="10" fill="#81C784"/>'
+    +'<rect x="6" y="26" width="3" height="5" fill="#81C784"/>'
+    +'<rect x="12" y="26" width="3" height="5" fill="#81C784"/>'
+    +'<rect x="5" y="21" width="11" height="2" fill="#8B4513"/>'
+    +'<rect x="7" y="5" width="7" height="7" fill="#FFCC80"/>'
+    +'<rect x="6" y="3" width="9" height="3" fill="#5D4037"/>'
+    +'<rect x="7" y="2" width="7" height="2" fill="#4E342E"/>'
+    +'<rect x="8" y="8" width="2" height="2" fill="#3E2723"/>'
+    +'<rect x="11" y="8" width="2" height="2" fill="#3E2723"/>'
+    +'<rect x="9" y="11" width="3" height="1" fill="#E07B20" opacity=".7"/>'
+    +'<rect x="4" y="14" width="3" height="7" fill="#A5D6A7"/>'
+    +'<rect x="14" y="14" width="3" height="7" fill="#A5D6A7"/>'
+    +'<rect x="4" y="20" width="3" height="2" fill="#FFCC80"/>'
+    +'<rect x="14" y="20" width="3" height="2" fill="#FFCC80"/>'
+    +'<rect x="13" y="17" width="9" height="6" fill="white"/>'
+    +'<rect x="15" y="15" width="5" height="5" fill="white"/>'
+    +'<rect x="16" y="14" width="1" height="1" fill="#333"/>'
+    +'<rect x="14" y="22" width="2" height="3" fill="#D4C5A9"/>'
+    +'<rect x="19" y="22" width="2" height="3" fill="#D4C5A9"/>'
+    +'</svg>';
+  },
+  warriorL:function(){
+    return '<svg width="80" height="130" viewBox="0 0 20 32" style="animation:breathe 2s ease-in-out infinite;filter:drop-shadow(3px 4px 0 rgba(0,0,0,.6))">'
+    +'<rect x="16" y="1" width="2" height="22" fill="#B0BEC5"/>'
+    +'<rect x="14" y="11" width="6" height="2" fill="#8B4513"/>'
+    +'<rect x="16" y="21" width="2" height="4" fill="#8B4513"/>'
+    +'<rect x="15" y="0" width="4" height="3" fill="#FFD700" opacity=".9"/>'
+    +'<rect x="4" y="13" width="10" height="14" fill="#B71C1C"/>'
+    +'<rect x="3" y="15" width="12" height="10" fill="#C62828"/>'
+    +'<rect x="5" y="14" width="8" height="9" fill="#9E9E9E" opacity=".65"/>'
+    +'<rect x="6" y="15" width="6" height="3" fill="#BDBDBD" opacity=".6"/>'
+    +'<rect x="7" y="19" width="4" height="2" fill="#BDBDBD" opacity=".5"/>'
+    +'<rect x="4" y="25" width="3" height="6" fill="#B71C1C"/>'
+    +'<rect x="11" y="25" width="3" height="6" fill="#B71C1C"/>'
+    +'<rect x="4" y="29" width="3" height="3" fill="#5D4037"/>'
+    +'<rect x="11" y="29" width="3" height="3" fill="#5D4037"/>'
+    +'<rect x="6" y="5" width="7" height="7" fill="#FFCC80"/>'
+    +'<rect x="5" y="2" width="9" height="5" fill="#757575"/>'
+    +'<rect x="4" y="4" width="11" height="3" fill="#9E9E9E"/>'
+    +'<rect x="5" y="2" width="9" height="2" fill="#BDBDBD"/>'
+    +'<rect x="7" y="8" width="2" height="2" fill="#3E2723"/>'
+    +'<rect x="10" y="8" width="2" height="2" fill="#3E2723"/>'
+    +'<rect x="5" y="11" width="9" height="2" fill="#616161"/>'
+    +'<rect x="2" y="13" width="3" height="8" fill="#C62828"/>'
+    +'<rect x="2" y="20" width="3" height="2" fill="#FFCC80"/>'
+    +'<rect x="13" y="13" width="4" height="8" fill="#9E9E9E" opacity=".8"/>'
+    +'<rect x="13" y="20" width="3" height="2" fill="#FFCC80"/>'
+    +'<rect x="13" y="12" width="8" height="11" fill="#8B4513" rx="1"/>'
+    +'<rect x="14" y="13" width="6" height="9" fill="#A0522D" opacity=".8"/>'
+    +'<rect x="16" y="15" width="2" height="5" fill="#FFD700" opacity=".75"/>'
+    +'</svg>';
+  },
+  scribeR:function(){
+    return '<svg width="80" height="130" viewBox="0 0 20 32" style="animation:breatheR 2.2s ease-in-out infinite;animation-delay:.7s;filter:drop-shadow(-3px 4px 0 rgba(0,0,0,.6))">'
+    +'<rect x="4" y="14" width="10" height="14" fill="#4DB6AC"/>'
+    +'<rect x="3" y="16" width="12" height="10" fill="#26A69A"/>'
+    +'<rect x="4" y="26" width="3" height="5" fill="#26A69A"/>'
+    +'<rect x="11" y="26" width="3" height="5" fill="#26A69A"/>'
+    +'<rect x="3" y="21" width="12" height="2" fill="#6D4C41"/>'
+    +'<rect x="5" y="5" width="8" height="8" fill="#FFCC80"/>'
+    +'<rect x="4" y="3" width="10" height="3" fill="#5D4037"/>'
+    +'<rect x="5" y="2" width="8" height="2" fill="#4E342E"/>'
+    +'<rect x="7" y="8" width="2" height="2" fill="#3E2723"/>'
+    +'<rect x="10" y="8" width="2" height="2" fill="#3E2723"/>'
+    +'<rect x="7" y="7" width="2" height="1" fill="#5D4037"/>'
+    +'<rect x="10" y="7" width="2" height="1" fill="#5D4037"/>'
+    +'<rect x="2" y="14" width="3" height="8" fill="#4DB6AC"/>'
+    +'<rect x="13" y="14" width="3" height="8" fill="#4DB6AC"/>'
+    +'<rect x="2" y="21" width="3" height="2" fill="#FFCC80"/>'
+    +'<rect x="13" y="21" width="3" height="2" fill="#FFCC80"/>'
+    +'<rect x="-1" y="16" width="6" height="8" fill="#D7CCC8" rx="1"/>'
+    +'<rect x="0" y="17" width="4" height="6" fill="#BCAAA4"/>'
+    +'<rect x="0" y="18" width="4" height="1" fill="#8D6E63"/>'
+    +'<rect x="0" y="20" width="4" height="1" fill="#8D6E63"/>'
+    +'<rect x="0" y="22" width="4" height="1" fill="#8D6E63"/>'
+    +'<rect x="14" y="13" width="1" height="8" fill="#FFF9C4"/>'
+    +'<rect x="14" y="13" width="2" height="2" fill="#80CBC4"/>'
+    +'<rect x="13" y="20" width="3" height="1" fill="#333"/>'
+    +'</svg>';
+  },
+  priestL:function(){
+    return '<svg width="82" height="135" viewBox="0 0 21 33" style="animation:breathe 3s ease-in-out infinite;filter:drop-shadow(3px 4px 0 rgba(0,0,0,.65))">'
+    +'<rect x="17" y="1" width="2" height="25" fill="#8B5E3C"/>'
+    +'<circle cx="18" cy="1" r="3" fill="#FFD700" opacity=".9"/>'
+    +'<circle cx="18" cy="1" r="2" fill="#FF8F00"/>'
+    +'<rect x="3" y="14" width="12" height="16" fill="#4A148C"/>'
+    +'<rect x="2" y="16" width="14" height="11" fill="#6A1B9A"/>'
+    +'<rect x="4" y="15" width="10" height="9" fill="#F5F5DC" opacity=".88"/>'
+    +'<rect x="5" y="16" width="2" height="2" fill="#F44336"/>'
+    +'<rect x="8" y="16" width="2" height="2" fill="#2196F3"/>'
+    +'<rect x="11" y="16" width="2" height="2" fill="#4CAF50"/>'
+    +'<rect x="5" y="19" width="2" height="2" fill="#FF9800"/>'
+    +'<rect x="8" y="19" width="2" height="2" fill="#9C27B0"/>'
+    +'<rect x="11" y="19" width="2" height="2" fill="#FFD700"/>'
+    +'<rect x="4" y="28" width="3" height="6" fill="#4A148C"/>'
+    +'<rect x="11" y="28" width="3" height="6" fill="#4A148C"/>'
+    +'<rect x="3" y="31" width="5" height="3" fill="#FFD700" opacity=".7"/>'
+    +'<rect x="10" y="31" width="5" height="3" fill="#FFD700" opacity=".7"/>'
+    +'<rect x="6" y="6" width="8" height="7" fill="#FFCC80"/>'
+    +'<rect x="5" y="1" width="10" height="7" fill="white"/>'
+    +'<rect x="6" y="0" width="8" height="3" fill="white"/>'
+    +'<rect x="5" y="2" width="10" height="2" fill="#FFD700" opacity=".8"/>'
+    +'<rect x="8" y="8" width="2" height="2" fill="#3E2723"/>'
+    +'<rect x="11" y="8" width="2" height="2" fill="#3E2723"/>'
+    +'<rect x="7" y="12" width="6" height="2" fill="#9E9D24"/>'
+    +'<rect x="8" y="14" width="4" height="1" fill="#9E9D24"/>'
+    +'<rect x="1" y="14" width="3" height="8" fill="#6A1B9A"/>'
+    +'<rect x="14" y="14" width="3" height="8" fill="#6A1B9A"/>'
+    +'<rect x="1" y="21" width="3" height="2" fill="#FFCC80"/>'
+    +'<rect x="14" y="21" width="3" height="2" fill="#FFCC80"/>'
+    +'<circle cx="6" cy="29" r="1.5" fill="#FFD700"/>'
+    +'<circle cx="10" cy="29" r="1.5" fill="#FFD700"/>'
+    +'<circle cx="14" cy="29" r="1.5" fill="#FFD700"/>'
+    +'</svg>';
+  },
+  apostleR:function(){
+    return '<svg width="82" height="135" viewBox="0 0 21 33" style="animation:breatheR 2.8s ease-in-out infinite;animation-delay:.4s;filter:drop-shadow(-3px 4px 0 rgba(0,0,0,.65))">'
+    +'<rect x="4" y="14" width="11" height="16" fill="#1565C0"/>'
+    +'<rect x="3" y="17" width="13" height="10" fill="#1976D2"/>'
+    +'<rect x="4" y="28" width="4" height="6" fill="#1565C0"/>'
+    +'<rect x="12" y="28" width="3" height="6" fill="#1565C0"/>'
+    +'<rect x="2" y="14" width="3" height="15" fill="#0D47A1" opacity=".8"/>'
+    +'<rect x="14" y="14" width="4" height="15" fill="#0D47A1" opacity=".8"/>'
+    +'<rect x="3" y="22" width="13" height="2" fill="#FFD700" opacity=".85"/>'
+    +'<rect x="6" y="5" width="8" height="8" fill="#FFCC80"/>'
+    +'<rect x="5" y="3" width="10" height="4" fill="#9E9E9E"/>'
+    +'<rect x="6" y="2" width="8" height="3" fill="#BDBDBD"/>'
+    +'<rect x="7" y="12" width="6" height="3" fill="#E0E0E0"/>'
+    +'<rect x="8" y="15" width="4" height="2" fill="#EEEEEE"/>'
+    +'<rect x="8" y="8" width="2" height="2" fill="#3E2723"/>'
+    +'<rect x="11" y="8" width="2" height="2" fill="#3E2723"/>'
+    +'<rect x="2" y="14" width="3" height="9" fill="#1976D2"/>'
+    +'<rect x="14" y="14" width="3" height="9" fill="#1976D2"/>'
+    +'<rect x="2" y="22" width="3" height="2" fill="#FFCC80"/>'
+    +'<rect x="14" y="22" width="3" height="2" fill="#FFCC80"/>'
+    +'<rect x="-1" y="19" width="5" height="7" fill="#F5F5DC" rx="1"/>'
+    +'<rect x="3" y="19" width="5" height="7" fill="#FFFDE7" rx="1"/>'
+    +'<rect x="3" y="19" width="1" height="7" fill="#8B5E3C"/>'
+    +'<rect x="0" y="20" width="2" height="1" fill="#9E9E9E"/>'
+    +'<rect x="0" y="22" width="2" height="1" fill="#9E9E9E"/>'
+    +'<rect x="0" y="24" width="2" height="1" fill="#9E9E9E"/>'
+    +'<rect x="4" y="20" width="3" height="1" fill="#9E9E9E"/>'
+    +'<rect x="4" y="22" width="3" height="1" fill="#9E9E9E"/>'
+    +'<rect x="4" y="24" width="3" height="1" fill="#9E9E9E"/>'
+    +'</svg>';
+  }
+};
+
+// ══════════════ WEATHER ══════════════
+function setWeather(diff){
+  var w=document.getElementById('weather');w.innerHTML='';
+  function makeRain(n,speed,tilt,opa){
+    for(var i=0;i<n;i++){
+      var d=document.createElement('div');d.className='rdrop';
+      d.style.cssText='left:'+(Math.random()*110-5)+'%;height:'+(50+Math.random()*70)+'px;'
+        +'animation:rfall '+(speed+Math.random()*.5)+'s '+'linear '+(-(Math.random()*1.5))+'s infinite;'
+        +'opacity:'+(opa+Math.random()*.25)+';transform:rotate('+tilt+'deg);';
+      w.appendChild(d);
+    }
+  }
+  if(diff==='fundo') makeRain(30,.7,8,.25);
+  if(diff==='teologo'){
+    makeRain(60,.38,20,.35);
+    var lf=document.createElement('div');
+    lf.style.cssText='position:absolute;inset:0;animation:lflash 4s ease-in-out infinite;pointer-events:none;';
+    w.appendChild(lf);
+  }
+}
+
+// ══════════════ MENU ANIMATIONS ══════════════
+function setupMenuAnim(){
+  var el=document.getElementById('menu-anim');el.innerHTML='';
+  // Animated clouds using SVG elements that drift
+  var clouds=[
+    {top:'12%',w:130,h:40,delay:'0s',dur:'22s',dir:1},
+    {top:'22%',w:100,h:32,delay:'-8s',dur:'30s',dir:1},
+    {top:'8%',w:110,h:36,delay:'-4s',dur:'26s',dir:-1},
+    {top:'18%',w:80,h:28,delay:'-14s',dur:'28s',dir:1},
+  ];
+  clouds.forEach(function(c){
+    var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('width',c.w);svg.setAttribute('height',c.h);
+    svg.setAttribute('viewBox','0 0 '+c.w+' '+c.h);
+    svg.style.cssText='position:absolute;top:'+c.top+';opacity:.82;pointer-events:none;';
+    var hw=c.w/2,hh=c.h/2;
+    svg.innerHTML='<ellipse cx="'+hw+'" cy="'+(c.h*.6)+'" rx="'+(c.w*.45)+'" ry="'+(c.h*.4)+'" fill="white"/>'
+      +'<ellipse cx="'+(c.w*.35)+'" cy="'+(c.h*.42)+'" rx="'+(c.w*.3)+'" ry="'+(c.h*.48)+'" fill="white"/>'
+      +'<ellipse cx="'+(c.w*.65)+'" cy="'+(c.h*.45)+'" rx="'+(c.w*.28)+'" ry="'+(c.h*.44)+'" fill="white"/>'
+      +'<ellipse cx="'+(c.w*.5)+'" cy="'+(c.h*.32)+'" rx="'+(c.w*.22)+'" ry="'+(c.h*.38)+'" fill="white"/>';
+    var startX=c.dir>0?'-'+c.w+'px':'calc(100vw + '+c.w+'px)';
+    var endX=c.dir>0?'calc(100vw + '+c.w+'px)':'-'+c.w+'px';
+    svg.style.left=startX;
+    svg.style.animation='none';
+    svg.style.transform='translateX(0)';
+    // Use CSS animation via keyframe injection per element
+    var animName='cd'+Math.random().toString(36).slice(2,6);
+    var styleEl=document.createElement('style');
+    styleEl.textContent='@keyframes '+animName+'{from{left:'+startX+';}to{left:'+endX+';}}';
+    document.head.appendChild(styleEl);
+    svg.style.animation=animName+' '+c.dur+' '+c.delay+' linear infinite';
+    el.appendChild(svg);
+  });
+
+  // Birds (simple pixel birds using text)
+  var birdDelays=['0s','-5s','-11s'];
+  var birdTops=['14%','26%','19%'];
+  birdDelays.forEach(function(d,i){
+    var b=document.createElement('div');
+    b.style.cssText='position:absolute;top:'+birdTops[i]+';font-size:12px;opacity:.75;animation:birdFly '+(16+i*4)+'s '+d+' linear infinite;';
+    b.textContent='🕊️';
+    el.appendChild(b);
+  });
+
+  // Twinkling stars in menu sky
+  for(var s=0;s<12;s++){
+    var st=document.createElement('div');st.className='mstar';
+    st.style.cssText='top:'+(4+Math.random()*28)+'%;left:'+(Math.random()*100)+'%;animation-delay:'+(Math.random()*2)+'s;opacity:'+(Math.random()*.5+.3);
+    el.appendChild(st);
+  }
+}
+
+// ══════════════ SCENE + CHARS ══════════════
+function setupScene(diff){
+  var sc=document.getElementById('scene-bg');
+  sc.style.opacity='0';
+  sc.innerHTML=Scenes[diff]();
+  setTimeout(function(){sc.style.transition='opacity .6s';sc.style.opacity='1';},50);
+  setWeather(diff);
+  var cl=document.getElementById('char-l'),cr=document.getElementById('char-r');
+  if(diff==='raso'){cl.innerHTML=Chars.prophetL();cr.innerHTML=Chars.shepherdR();}
+  else if(diff==='fundo'){cl.innerHTML=Chars.warriorL();cr.innerHTML=Chars.scribeR();}
+  else{cl.innerHTML=Chars.priestL();cr.innerHTML=Chars.apostleR();}
+}
+
+function setupMenuScene(){
+  var sc=document.getElementById('scene-bg');
+  sc.innerHTML=Scenes.raso();
+  sc.style.opacity='1';
+  document.getElementById('weather').innerHTML='';
+  document.getElementById('char-l').innerHTML='';
+  document.getElementById('char-r').innerHTML='';
+  setupMenuAnim();
+}
+
+// ══════════════ SHUFFLE ══════════════
+function shuffle(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;}
+
+// ══════════════ STATE ══════════════
+var S={diff:'',qs:[],idx:0,lives:5,score:0,combo:0,answered:false,startTime:0,elapsed:0,timer:null,timerSecs:0};
+var pendingResult=null;
+var lbCurrentTab='raso';
+var userHasInteracted=false;
+
+function onFirstInteraction(){
+  if(userHasInteracted)return;
+  userHasInteracted=true;
+  // Resume AudioContext (Chrome policy)
+  try{var c=Audio&&Audio.play&&window._audioCtx;if(c&&c.state==='suspended')c.resume();}catch(e){}
+  // Start menu music now that we have a user gesture
+  var active=document.querySelector('.screen.active');
+  if(active&&active.id==='menu-screen')Audio.play('menu');
+}
+document.addEventListener('click',onFirstInteraction,{once:true});
+document.addEventListener('keydown',onFirstInteraction,{once:true});
+
+// ══════════════ SCREEN ══════════════
+function show(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  var el=document.getElementById(id);if(el)el.classList.add('active');
+  if(id==='menu-screen'){
+    setupMenuScene();
+    // Music only after user interaction (AudioContext policy)
+    if(userHasInteracted)Audio.play('menu');
+  }
+  if(id==='result-screen'){if(userHasInteracted)Audio.play('result');}
+}
+function showDiff(){SFX.click();onFirstInteraction();show('diff-screen');}
+function showAbout(){SFX.click();alert('⚔️ MEOD QUEST\n\n"Amarás ao Senhor teu Deus com todo o teu meod." — Dt 6:5\n\n"Meod" (מְאֹד) = com toda a força e intensidade.\n\n📖 100 perguntas por nível · 3 níveis\n🎨 Cenários pixel art por nível\n👤 Personagens bíblicos animados\n🏆 Leaderboard por nível\n⏱ Bônus por velocidade\n🎵 Trilha sonora por nível\n\n✦ Ad majorem Dei gloriam ✦');}
+
+// ══════════════ LEADERBOARD UI ══════════════
+function showLB(){
+  SFX.click();
+  lbTab(lbCurrentTab);
+  show('lb-screen');
+}
+function showLBAfterGame(){
+  lbTab(S.diff||'raso');
+  show('lb-screen');
+}
+function lbTab(diff){
+  SFX.click();
+  lbCurrentTab=diff;
+  ['raso','fundo','teologo'].forEach(function(d){
+    var t=document.getElementById('lbtab-'+d);
+    t.className='lbtab'+(d===diff?' active-'+d:'');
+  });
+  var list=document.getElementById('lb-list');
+  var data=LB.load(diff);
+  list.innerHTML='';
+  if(!data.length){
+    list.innerHTML='<div class="lb-empty">Nenhum registro ainda.<br>Jogue e entre para a história!</div>';
+    return;
+  }
+  var medals=['🥇','🥈','🥉'];
+  var rowCls=['gold','silver','bronze'];
+  data.forEach(function(entry,i){
+    var row=document.createElement('div');
+    row.className='lb-row'+(i<3?' '+rowCls[i]:'');
+    var mins=Math.floor((entry.secs||0)/60);
+    var secs=((entry.secs||0)%60).toString().padStart(2,'0');
+    row.innerHTML='<span class="lb-rank">'+(i<3?medals[i]:'#'+(i+1))+'</span>'
+      +'<span class="lb-name">'+escHtml(entry.name)+'</span>'
+      +'<span class="lb-time">'+mins+':'+secs+'</span>'
+      +'<span class="lb-pts">'+entry.pts+' pts</span>';
+    list.appendChild(row);
+  });
+}
+function escHtml(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+// ══════════════ TIMER ══════════════
+function startTimer(){
+  clearInterval(S.timer);
+  S.timerSecs=30;
+  var bar=document.getElementById('timer-bar');
+  bar.style.transition='none';bar.style.width='100%';
+  bar.style.background='#FFD700';
+  setTimeout(function(){
+    bar.style.transition='width .25s linear';
+    S.timer=setInterval(function(){
+      S.timerSecs--;
+      var pct=(S.timerSecs/30)*100;
+      bar.style.width=pct+'%';
+      if(S.timerSecs<=10){bar.style.background='#FF5722';if(S.timerSecs%2===0)SFX.timerTick();}
+      if(S.timerSecs<=0){clearInterval(S.timer);timeUp();}
+    },1000);
+  },50);
+}
+function stopTimer(){clearInterval(S.timer);document.getElementById('timer-bar').style.transition='none';}
+function timeUp(){
+  if(S.answered)return;
+  S.answered=true;S.lives--;S.combo=0;SFX.wrong();
+  document.querySelectorAll('.obt').forEach(function(b){b.disabled=true;});
+  var q=S.qs[S.idx];
+  if(q.type==='tf'){
+    document.querySelectorAll('.obt').forEach(function(b){
+      if((b.classList.contains('tv')&&q.correct)||(!b.classList.contains('tv')&&!q.correct))b.classList.add('correct');
+    });
+  } else { document.querySelectorAll('.obt')[q.correct].classList.add('correct'); }
+  showFeedback(false,'⏰ Tempo esgotado! '+q.explain,q.ref);
+  spawnPop(false,'⏰');
+}
+
+// ══════════════ START ══════════════
+function start(diff){
+  SFX.start(diff);
+  Audio.play(diff);
+  S.diff=diff;
+  S.qs=shuffle(QB[diff]).slice(0,10);
+  S.idx=0;S.lives=5;S.score=0;S.combo=0;S.elapsed=0;
+  S.startTime=Date.now();
+  var labels={raso:'🌅 RASO',fundo:'🌧 FUNDO',teologo:'⚡ TEÓLOGO'};
+  document.getElementById('dpill').textContent=labels[diff];
+  document.getElementById('hud').classList.add('on');
+  document.getElementById('q-wrap').classList.add('on');
+  document.getElementById('timer-bar-wrap').classList.add('on');
+  setupScene(diff);
+  show('game-screen');
+  renderQ();
+}
+
+// ══════════════ RENDER Q ══════════════
+function renderQ(){
+  var q=S.qs[S.idx],total=S.qs.length;
+  var lv=document.getElementById('lives-disp');lv.innerHTML='';
+  for(var i=0;i<5;i++){var h=document.createElement('span');h.className='heart'+(i>=S.lives?' dead':'');h.textContent='❤️';lv.appendChild(h);}
+  document.getElementById('progfill').style.width=((S.idx/total)*100)+'%';
+  document.getElementById('qnum').textContent=(S.idx+1)+'/'+total;
+  document.getElementById('qtype-lbl').textContent=q.type==='tf'?'✦ VERDADEIRO OU FALSO ✦':'✦ MÚLTIPLA ESCOLHA ✦';
+  document.getElementById('q-text').textContent=q.q;
+  var grid=document.getElementById('opts');grid.innerHTML='';
+  if(q.type==='tf'){
+    grid.className='ogrid two';
+    [['VERDADEIRO','tv'],['FALSO','fv']].forEach(function(p,i){
+      var b=document.createElement('button');b.className='obt '+p[1];b.textContent=p[0];
+      (function(isT,btn){btn.onclick=function(){checkTF(isT,btn);};})(i===0,b);
+      grid.appendChild(b);
+    });
+  } else {
+    grid.className='ogrid four';
+    q.opts.forEach(function(o,i){
+      var b=document.createElement('button');b.className='obt';
+      b.textContent=['A) ','B) ','C) ','D) '][i]+o;
+      (function(idx,btn){btn.onclick=function(){checkMC(idx,btn);};})(i,b);
+      grid.appendChild(b);
+    });
+  }
+  S.answered=false;
+  document.getElementById('feedback').classList.remove('on');
+  startTimer();
+}
+
+function checkTF(ans,btn){
+  if(S.answered)return;S.answered=true;stopTimer();
+  var q=S.qs[S.idx];var ok=(ans===q.correct);
+  document.querySelectorAll('.obt').forEach(function(b){b.disabled=true;});
+  if(ok){btn.classList.add('correct');S.score++;S.combo++;SFX.correct();showFeedback(true,q.explain,q.ref);}
+  else{btn.classList.add('wrong');document.querySelectorAll('.obt').forEach(function(b){if((b.classList.contains('tv')&&q.correct)||(!b.classList.contains('tv')&&!q.correct))b.classList.add('correct');});S.lives--;S.combo=0;SFX.wrong();showFeedback(false,q.explain,q.ref);}
+  spawnPop(ok);
+}
+function checkMC(idx,btn){
+  if(S.answered)return;S.answered=true;stopTimer();
+  var q=S.qs[S.idx];var ok=(idx===q.correct);
+  document.querySelectorAll('.obt').forEach(function(b){b.disabled=true;});
+  if(ok){btn.classList.add('correct');S.score++;S.combo++;SFX.correct();showFeedback(true,q.explain,q.ref);}
+  else{btn.classList.add('wrong');document.querySelectorAll('.obt')[q.correct].classList.add('correct');S.lives--;S.combo=0;SFX.wrong();showFeedback(false,q.explain,q.ref);}
+  spawnPop(ok);
+}
+function spawnPop(ok,label){
+  var p=document.createElement('div');p.className='spop';
+  var txt=label||(ok?(S.combo>2?'🔥 x'+S.combo+' COMBO!':'+1 ✓'):'✗');
+  p.style.cssText='top:42%;left:'+(36+Math.random()*26)+'%;font-size:'+(ok&&S.combo>2?'17px':'13px')+';color:'+(ok?(S.combo>2?'#FF6D00':'#FFD700'):'#FF5252');
+  p.textContent=txt;
+  document.getElementById('game').appendChild(p);
+  setTimeout(function(){p.remove();},1400);
+}
+function showFeedback(ok,explain,ref){
+  var isLast=S.idx>=S.qs.length-1,dead=S.lives<=0;
+  var b=document.getElementById('fb-banner');b.textContent=ok?'✓ CORRETO!':'✗ ERRADO!';b.className='fbbanner '+(ok?'ok':'bad');
+  document.getElementById('fb-explain').textContent=explain;
+  document.getElementById('fb-ref').textContent=ref?'📖 '+ref:'';
+  document.getElementById('fb-next').textContent=(isLast||dead)?'VER RESULTADO 🏆':'PRÓXIMA ➜';
+  document.getElementById('feedback').classList.add('on');
+}
+function next(){
+  SFX.click();S.idx++;
+  if(S.lives<=0||S.idx>=S.qs.length){endGame();return;}
+  document.getElementById('feedback').classList.remove('on');
+  renderQ();
+}
+
+// ══════════════ QUIT ══════════════
+function confirmQuit(){SFX.click();document.getElementById('pause-modal').classList.add('on');}
+function resume(){SFX.click();document.getElementById('pause-modal').classList.remove('on');}
+function quit(){
+  SFX.click();stopTimer();
+  Audio.play('menu');
+  document.getElementById('pause-modal').classList.remove('on');
+  document.getElementById('feedback').classList.remove('on');
+  document.getElementById('q-wrap').classList.remove('on');
+  document.getElementById('hud').classList.remove('on');
+  document.getElementById('timer-bar-wrap').classList.remove('on');
+  document.getElementById('weather').innerHTML='';
+  document.getElementById('char-l').innerHTML='';
+  document.getElementById('char-r').innerHTML='';
+  show('menu-screen');
+}
+
+// ══════════════ END GAME ══════════════
+function endGame(){
+  stopTimer();
+  document.getElementById('feedback').classList.remove('on');
+  document.getElementById('q-wrap').classList.remove('on');
+  document.getElementById('hud').classList.remove('on');
+  document.getElementById('timer-bar-wrap').classList.remove('on');
+  S.elapsed=Math.round((Date.now()-S.startTime)/1000);
+  var total=S.qs.length,pct=Math.round((S.score/total)*100);
+  var pts=calcPts(S.score,total,S.elapsed);
+  var emoji,title,verse,stars;
+  if(pct>=90){emoji='🏆';title='SÁBIO DAS ESCRITURAS!';stars='⭐⭐⭐';SFX.victory();verse='"Bem-aventurado aquele que lê e os que ouvem as palavras desta profecia." — Apocalipse 1:3';}
+  else if(pct>=70){emoji='⭐';title='ESTUDIOSO FIEL!';stars='⭐⭐';SFX.victory();verse='"Toda a Escritura é inspirada por Deus e útil para o ensino." — 2 Timóteo 3:16';}
+  else if(pct>=50){emoji='📖';title='APRENDIZ DA PALAVRA!';stars='⭐';SFX.click();verse='"A entrada das tuas palavras ilumina; dá entendimento aos simples." — Salmos 119:130';}
+  else{emoji='🌱';title='CONTINUA A JORNADA!';stars='';SFX.fail();verse='"Lâmpada para os meus pés é a tua palavra, e luz para o meu caminho." — Salmos 119:105';}
+  document.getElementById('res-icon').textContent=emoji;
+  document.getElementById('res-title').textContent=title;
+  document.getElementById('res-stars').textContent=stars;
+  document.getElementById('res-score').textContent=S.score+'/'+total+' corretas ('+pct+'%)';
+  var mins=Math.floor(S.elapsed/60),secs=(S.elapsed%60).toString().padStart(2,'0');
+  document.getElementById('res-pts').textContent='⏱ '+mins+':'+secs+' · 🏅 '+pts+' pontos';
+  document.getElementById('res-verse').textContent=verse;
+  pendingResult={diff:S.diff,pts:pts,secs:S.elapsed};
+  show('result-screen');
+  // Ask name after short delay
+  if(pts>0){setTimeout(function(){showNameModal(pts);},600);}
+}
+
+function showNameModal(pts){
+  var diff=pendingResult?pendingResult.diff:'raso';
+  var labels={raso:'🌅 Raso',fundo:'🌧 Fundo',teologo:'⚡ Teólogo'};
+  document.getElementById('name-score-preview').textContent=labels[diff]+' · '+pts+' pontos · Quer entrar para o leaderboard?';
+  document.getElementById('name-input').value='';
+  document.getElementById('name-modal').classList.add('on');
+  setTimeout(function(){document.getElementById('name-input').focus();},100);
+}
+function saveName(){
+  var name=(document.getElementById('name-input').value||'').trim();
+  if(!name){document.getElementById('name-input').focus();return;}
+  if(pendingResult){LB.add(pendingResult.diff,name,pendingResult.pts,pendingResult.secs);}
+  document.getElementById('name-modal').classList.remove('on');
+  pendingResult=null;
+  SFX.click();
+}
+function skipName(){
+  document.getElementById('name-modal').classList.remove('on');
+  pendingResult=null;SFX.click();
+}
+
+// ══════════════ ENTER KEY ON NAME ══════════════
+document.getElementById('name-input').addEventListener('keydown',function(e){if(e.key==='Enter')saveName();});
+
+// ══════════════ BOOT ══════════════
+function boot(){
+  var bar=document.getElementById('lbar'),txt=document.getElementById('ltxt');
+  var msgs=['Preparando as Escrituras...','Carregando o Antigo Testamento...','Carregando o Novo Testamento...','Pintando os cenários...','Quase pronto...'];
+  var pct=0,mi=0;
+  var iv=setInterval(function(){
+    pct+=(Math.random()*13+5);if(pct>100)pct=100;
+    bar.style.width=pct+'%';
+    if(mi<msgs.length&&pct>(mi+1)*18)txt.textContent=msgs[mi++];
+    if(pct>=100){clearInterval(iv);setTimeout(function(){show('menu-screen');},400);}
+  },130);
+}
+window.addEventListener('DOMContentLoaded',function(){setTimeout(boot,400);});
+
+// ══════════════ QUESTION BANK ══════════════
+var QB={
+raso:[
+  {type:'tf',q:'Davi era pastor de ovelhas antes de se tornar rei de Israel.',correct:true,explain:'Davi cuidava das ovelhas de seu pai Jessé. Foi enquanto pastoreava que matou um leão e um urso, preparando-o para enfrentar o gigante Golias.',ref:'1 Samuel 17:34-36'},
+  {type:'tf',q:'Noé entrou na arca sozinho, sem sua família, para proteger os animais.',correct:false,explain:'Deus ordenou a Noé que entrasse na arca com toda a sua família — sua esposa, seus três filhos e as esposas deles. Oito pessoas no total, além dos pares de animais.',ref:'Gênesis 6:14-22'},
+  {type:'tf',q:'Foi Josué quem dividiu o Mar Vermelho para que Israel atravessasse a pé.',correct:false,explain:'Foi MOISÉS, não Josué, que estendeu o cajado sobre o mar. As águas se dividiram e Israel atravessou em terra seca. Josué foi quem dividiu o rio Jordão, já na terra prometida.',ref:'Êxodo 14:21-22'},
+  {type:'tf',q:'Davi era um gigante que lutou contra Golias.',correct:false,explain:'Foi o oposto! Davi era um jovem pastor pequeno. Golias era o guerreiro gigante filisteu com quase três metros de altura — e Davi o derrubou com uma pedra e uma funda.',ref:'1 Samuel 17:4-50'},
+  {type:'tf',q:'Jonas foi engolido por um grande peixe porque desobedeceu a Deus.',correct:true,explain:'Deus mandou Jonas ir a Nínive, mas ele fugiu num navio para Társis. A tempestade e o grande peixe foram consequências diretas de sua desobediência.',ref:'Jonas 1:1-17'},
+  {type:'tf',q:'A Última Ceia foi uma celebração do Pentecostes judaico.',correct:false,explain:'A Última Ceia foi uma celebração da PÁSCOA, não do Pentecostes. Jesus a celebrou com seus discípulos na véspera de Sua crucificação, instituindo o que chamamos de Santa Ceia.',ref:'Mateus 26:17-19'},
+  {type:'tf',q:'Daniel foi colocado na cova dos leões por adorar somente a Deus.',correct:true,explain:'Conselheiros invejosos criaram um decreto proibindo oração a qualquer deus por 30 dias. Daniel continuou orando três vezes ao dia e foi lançado aos leões — e sobreviveu.',ref:'Daniel 6:7-10'},
+  {type:'tf',q:'Sadraque, Mesaque e Abednego morreram na fornalha ardente por não adorar a estátua de Nabucodonosor.',correct:false,explain:'Os três saíram VIVOS e ilesos — sem cheiro de fogo! Uma quarta figura misteriosa foi vista dentro da fornalha. Nabucodonosor ficou espantado e os promoveu no reino.',ref:'Daniel 3:19-27'},
+  {type:'tf',q:'Jesus nasceu na cidade de Belém.',correct:true,explain:'Jesus nasceu em Belém de Judá, conforme a profecia de Miquéias 5:2. Nazaré foi onde Ele cresceu, mas não onde nasceu.',ref:'Lucas 2:4-7'},
+  {type:'tf',q:'O Salmo 23 começa com "O Senhor é meu pastor; nada me faltará."',correct:true,explain:'Escrito por Davi, o ex-pastor, este salmo revela uma compreensão profunda do cuidado divino baseada em sua própria experiência de campo.',ref:'Salmo 23:1'},
+  {type:'tf',q:'Judas negou Jesus três vezes antes de o galo cantar, por medo dos soldados.',correct:false,explain:'Foi PEDRO, não Judas, que negou Jesus três vezes. Jesus havia profetizado isso. Pedro saiu chorando amargamente. Judas traiu Jesus com um beijo por 30 moedas de prata.',ref:'Mateus 26:69-75'},
+  {type:'tf',q:'O arco-íris foi o sinal da aliança de Deus com Abraão após o sacrifício de Isaque.',correct:false,explain:'O arco-íris foi o sinal da aliança com NOÉ após o dilúvio. Com Abraão, o sinal da aliança foi a circuncisão. "Ponho o meu arco nas nuvens" — promessa de nunca mais destruir a terra com água.',ref:'Gênesis 9:12-13'},
+  {type:'tf',q:'José (filho de Jacó) foi vendido como escravo pelo seu pai Jacó por ter desobedecido.',correct:false,explain:'José foi vendido pelos seus IRMÃOS — cheios de inveja do manto colorido e dos sonhos. Eles o venderam por 20 moedas de prata a mercadores ismaelitas que iam para o Egito.',ref:'Gênesis 37:28'},
+  {type:'tf',q:'Sansão perdeu sua força quando Dalila cortou seu cabelo.',correct:true,explain:'O cabelo de Sansão era o sinal do seu voto de nazireu. Com ele cortado por Dalila, Deus se afastou e ele perdeu a força sobrenatural.',ref:'Juízes 16:19-20'},
+  {type:'tf',q:'Pedro foi o primeiro a ver Jesus ressurreto ao chegar correndo ao sepulcro vazio.',correct:false,explain:'Foi MARIA MADALENA, não Pedro, que viu Jesus ressurreto primeiro. João 20 registra que ela foi ao sepulcro de madrugada e O encontrou — ela pensou que era o jardineiro.',ref:'João 20:11-18'},
+  {type:'tf',q:'Jesus transformou vinho em água como seu primeiro milagre registrado no Evangelho de João.',correct:false,explain:'Foi o contrário: Jesus transformou ÁGUA em VINHO nas bodas de Caná — não vinho em água. João chama isso de "o início dos seus sinais", e os discípulos creram nele.',ref:'João 2:1-11'},
+  {type:'tf',q:'O nome "Israel" foi dado a Abraão como parte da aliança no monte Moriá.',correct:false,explain:'O nome Israel foi dado a JACÓ, não a Abraão. Após a luta misteriosa: "Não te chamarás mais Jacó, mas Israel; porque lutaste com Deus e com os homens e prevaleceste."',ref:'Gênesis 32:28'},
+  {type:'tf',q:'Rute era uma mulher israelita que ficou com sua sogra Noemi.',correct:false,explain:'Rute era moabita — estrangeira! Ela declarou: "Onde tu morreres, morrerei eu." Sua lealdade radical levou-a a se tornar bisavó do rei Davi.',ref:'Rute 1:4,16'},
+  {type:'tf',q:'Zaqueu era um cobrador de impostos que subiu numa figueira para ver Jesus.',correct:true,explain:'Zaqueu era publicano de baixa estatura. Ao ver Jesus, desceu imediatamente e declarou que devolveria o quádruplo a quem havia defraudado.',ref:'Lucas 19:2-8'},
+  {type:'tf',q:'Jesus multiplicou 5 pães e 2 peixes para alimentar cerca de 5.000 homens.',correct:true,explain:'Este é o único milagre (além da ressurreição) narrado nos quatro Evangelhos. Depois ainda sobraram doze cestas cheias.',ref:'João 6:9-13'},
+  {type:'tf',q:'Elias foi levado ao céu num carro de fogo.',correct:true,explain:'"Eis que um carro de fogo e cavalos de fogo os separaram; e Elias subiu ao céu num redemoinho." Eliseu herdou seu manto como símbolo de herança espiritual.',ref:'2 Reis 2:11'},
+  {type:'tf',q:'O Espírito Santo desceu sobre os discípulos como línguas de fogo no Pentecostes.',correct:true,explain:'Cinquenta dias após a Páscoa, o Espírito Santo veio sobre os 120 discípulos reunidos. Eles começaram a falar em outras línguas e Pedro pregou para milhares.',ref:'Atos 2:1-4'},
+  {type:'tf',q:'Isaías profetizou que o Messias nasceria de uma virgem.',correct:true,explain:'"Eis que a virgem conceberá e dará à luz um filho, e chamará o seu nome Emanuel" — profecia de Isaías 7:14, aplicada ao nascimento de Jesus em Mateus 1:23.',ref:'Isaías 7:14'},
+  {type:'tf',q:'Moisés recebeu os Dez Mandamentos no monte Sinai.',correct:true,explain:'Após o Êxodo do Egito, Moisés subiu ao monte Sinai onde Deus Se manifestou em fogo e entregou as duas tábuas de pedra com os Dez Mandamentos.',ref:'Êxodo 19-20'},
+  {type:'tf',q:'O apóstolo Paulo escreveu o Evangelho de João.',correct:false,explain:'Paulo não escreveu nenhum Evangelho. O quarto Evangelho é atribuído ao apóstolo João. Paulo escreveu 13 epístolas como Romanos e 1 Coríntios.',ref:'João 21:24'},
+  {type:'tf',q:'João Batista batizou Jesus no rio Jordão.',correct:true,explain:'Quando Jesus foi batizado, o Espírito Santo desceu como pomba e uma voz do céu declarou: "Este é o meu Filho amado, em quem me comprazo."',ref:'Mateus 3:13-17'},
+  {type:'tf',q:'A serpente no jardim do Éden tentou Adão diretamente.',correct:false,explain:'A serpente abordou Eva, não Adão diretamente. Ela questionou a Palavra de Deus e enganou Eva para comer o fruto proibido.',ref:'Gênesis 3:1-6'},
+  {type:'tf',q:'O fruto proibido no jardim do Éden era especificamente uma maçã.',correct:false,explain:'A Bíblia diz apenas "fruto da árvore do conhecimento do bem e do mal." A tradição da maçã veio da arte medieval europeia — não do texto bíblico.',ref:'Gênesis 2:17'},
+  {type:'tf',q:'As pragas do Egito foram um total de dez.',correct:true,explain:'Dez pragas: água em sangue, rãs, piolhos, moscas, morte do gado, chagas, granizo, gafanhotos, trevas e morte dos primogênitos — forçando o Faraó a libertar Israel.',ref:'Êxodo 7-12'},
+  {type:'tf',q:'Paulo foi convertido quando ia perseguir cristãos em Damasco.',correct:true,explain:'Saulo ia a Damasco com cartas para prender seguidores de Jesus. Uma luz do céu o derrubou e ele ouviu: "Saulo, por que me persegues?"',ref:'Atos 9:1-6'},
+  {type:'tf',q:'Rebeca era esposa de Isaque e mãe de Jacó e Esaú.',correct:true,explain:'Rebeca foi buscada por servo de Abraão para Isaque. Ela foi mãe dos gêmeos Esaú e Jacó, tendo papel central na continuidade da aliança.',ref:'Gênesis 24 / 25:21-26'},
+  {type:'tf',q:'A cidade de Nínive estava na região da atual Índia.',correct:false,explain:'Nínive era a capital da Assíria, localizada no atual Iraque (próximo a Mosul). Era uma das maiores cidades do mundo antigo.',ref:'Jonas 1:2'},
+  {type:'tf',q:'Salomão foi considerado o homem mais sábio do mundo em sua época.',correct:true,explain:'Deus apareceu a Salomão e ele pediu sabedoria. Deus ficou tão agradado que lhe deu também riquezas e glória incomparáveis.',ref:'1 Reis 3:5-13'},
+  {type:'tf',q:'A parábola do Filho Pródigo aparece no Evangelho de Marcos.',correct:false,explain:'A parábola do Filho Pródigo está em Lucas 15:11-32, não em Marcos. Lucas preservou as parábolas mais detalhadas e emocionantes de Jesus.',ref:'Lucas 15:11'},
+  {type:'tf',q:'Abraão tinha 75 anos quando saiu de Harã rumo à terra prometida.',correct:true,explain:'"E Abrão tinha setenta e cinco anos quando saiu de Harã." A fé de Abraão em deixar tudo em idade avançada é modelo de obediência em Hebreus.',ref:'Gênesis 12:4'},
+
+  {type:'tf',q:'Adão e Eva foram expulsos do Jardim do Éden após pecarem.',correct:true,explain:'Após comer o fruto proibido, Deus os expulsou do jardim e colocou querubins e uma espada flamejante para guardar o caminho da árvore da vida.',ref:'Gênesis 3:23-24'},
+  {type:'tf',q:'Caim matou seu irmão Abel por inveja da oferta aceita por Deus.',correct:true,explain:'Deus aceitou a oferta de Abel (primogênitos do rebanho) mas não a de Caim (frutos da terra). Cheio de ira, Caim levou Abel ao campo e o matou.',ref:'Gênesis 4:3-8'},
+  {type:'tf',q:'A Torre de Babel foi construída para alcançar o céu e tornar o povo famoso.',correct:true,explain:'"Venha, edifiquemos uma cidade e uma torre cujo topo chegue ao céu." Deus confundiu as línguas e dispersou o povo pela face da terra.',ref:'Gênesis 11:4-8'},
+  {type:'tf',q:'Abraão tinha dois filhos: Ismael e Isaque.',correct:true,explain:'Ismael nasceu de Agar, serva de Sara. Isaque nasceu de Sara quando ela tinha 90 anos, sendo filho da promessa e da aliança.',ref:'Gênesis 16:15 / 21:3'},
+  {type:'tf',q:'Esaú vendeu sua primogenitura a Jacó por um prato de lentilhas.',correct:true,explain:'"Vendes hoje a mim a tua primogenitura?" — Jacó aproveitou a fome de Esaú para comprar seu direito de primogênito por um prato de caldo vermelho.',ref:'Gênesis 25:31-33'},
+  {type:'tf',q:'O faraó do Egito libertou Israel voluntariamente sem pressão.',correct:false,explain:'O Faraó endureceu seu coração repetidamente, exigindo dez pragas devastadoras. Só após a morte dos primogênitos ele cedeu — temporariamente.',ref:'Êxodo 5-12'},
+  {type:'tf',q:'Calebe foi o sucessor de Moisés e liderou Israel através do rio Jordão.',correct:false,explain:'Foi JOSUÉ, não Calebe, quem sucedeu Moisés. Deus disse a Josué: "Como eu estava com Moisés, assim estarei contigo." Calebe foi o outro espião fiel, mas Josué foi o líder designado.',ref:'Josué 1:1-3'},
+  {type:'tf',q:'As muralhas de Jericó foram derrubadas por Josué com aríetes durante três dias de batalha.',correct:false,explain:'Não houve aríetes — foi uma estratégia espiritual! O povo marchou em silêncio por seis dias e sete vezes no sétimo. Os sacerdotes tocaram trombetas, o povo gritou e os muros desabaram.',ref:'Josué 6:15-20'},
+  {type:'tf',q:'Débora foi a única juíza mulher de Israel mencionada na Bíblia.',correct:true,explain:'Débora era profetisa e juíza de Israel. Ela e o general Baraque lideraram a vitória sobre o exército de Sísara.',ref:'Juízes 4:4-9'},
+  {type:'tf',q:'Rute voltou para Moabe após a morte do marido, deixando sua sogra Noemi sozinha.',correct:false,explain:'Foi ORPÁ que voltou para Moabe. Rute declarou: "Onde tu morreres, morrerei eu." Ela ficou com Noemi, foi para Belém, trabalhou na colheita de Boaz e se casou com ele, tornando-se bisavó de Davi.',ref:'Rute 4:9-10'},
+  {type:'tf',q:'Eli foi o último juiz de Israel e ungiu Saul como o primeiro rei.',correct:false,explain:'Foi SAMUEL, não Eli, o último juiz e quem ungiu reis. Eli era sumo sacerdote e mentor de Samuel, mas morreu antes da era da monarquia. Samuel ungiu Saul e depois Davi como reis.',ref:'1 Samuel 10:1 / 16:13'},
+  {type:'tf',q:'O rei Saul foi rejeitado por desobedecer à ordem de destruir os amalequitas completamente.',correct:true,explain:'"Por desprezares a palavra do Senhor, ele também te rejeitou como rei." Saul poupou o rei Agague e o melhor do rebanho.',ref:'1 Samuel 15:22-23'},
+  {type:'tf',q:'Davi construiu o Templo de Jerusalém em sete anos como promessa a Deus.',correct:false,explain:'Foi SALOMÃO, não Davi, quem construiu o Templo. Davi desejou construí-lo, mas Deus disse que seria seu filho quem o faria. Salomão começou no 4º ano de reinado e concluiu em sete anos.',ref:'1 Reis 6:37-38'},
+  {type:'tf',q:'O profeta Eliseu desafiou o rei Acabe e anunciou a seca de três anos.',correct:false,explain:'Foi ELIAS, não Eliseu, que anunciou a seca ao rei Acabe. Eliseu foi o sucessor de Elias. A seca durou três anos e meio, sendo encerrada após o duelo com os profetas de Baal no Carmelo.',ref:'1 Reis 17:1 / Tiago 5:17'},
+  {type:'tf',q:'Eliseu multiplicou pães para cem homens, prefigurando o milagre de Jesus.',correct:true,explain:'Eliseu mandou que vinte pães de cevada fossem dados a cem homens — eles comeram e sobraram. Um paralelo impressionante com Jesus.',ref:'2 Reis 4:42-44'},
+  {type:'tf',q:'O profeta Ezequiel foi chamado ainda criança e respondeu: "não sei falar, porque sou criança".',correct:false,explain:'Essas foram as palavras de JEREMIAS, não de Ezequiel. Jeremias se sentiu despreparado, mas Deus respondeu: "Antes de te formar no ventre te conheci, te separei para profeta das nações."',ref:'Jeremias 1:5-7'},
+  {type:'tf',q:'Ezequiel teve visões enquanto estava entre os exilados na Babilônia.',correct:true,explain:'Ezequiel recebeu suas visões no rio Quebar, na Babilônia. Sua visão inaugural inclui quatro criaturas viventes e rodas dentro de rodas.',ref:'Ezequiel 1:1-3'},
+  {type:'tf',q:'O livro de Esdras trata do retorno dos judeus do cativeiro babilônico.',correct:true,explain:'Esdras liderou um grupo de exilados de volta a Jerusalém para reconstruir o templo e restaurar a Lei, após o decreto de Ciro.',ref:'Esdras 1:1-3'},
+  {type:'tf',q:'Esdras reconstruiu as muralhas de Jerusalém em 52 dias após o retorno da Babilônia.',correct:false,explain:'Foi NEEMIAS, não Esdras, quem liderou a reconstrução dos muros. Esdras liderou a restauração espiritual e da Lei. As muralhas foram concluídas em 52 dias — uma façanha que impressionou os inimigos.',ref:'Neemias 6:15'},
+  {type:'tf',q:'O livro de Isaías é o capítulo mais longo da Bíblia, com mais de 170 versículos.',correct:false,explain:'O SALMO 119 é o capítulo mais longo da Bíblia, com 176 versículos. Isaías é um livro, não um capítulo. O Salmo 119 é dividido em 22 estrofes correspondendo às letras do alfabeto hebraico.',ref:'Salmo 119'},
+  {type:'tf',q:'O profeta Amós era pastor de Técoa antes de ser chamado por Deus.',correct:true,explain:'"Não sou profeta nem filho de profeta, sou pastor e cultivador de sicômoros." Amós foi um profeta leigo chamado do campo.',ref:'Amós 7:14-15'},
+  {type:'tf',q:'Jesus tinha sete discípulos, escolhidos como símbolo das sete igrejas do Apocalipse.',correct:false,explain:'Jesus escolheu DOZE discípulos — símbolo das doze tribos de Israel. Os doze foram: Pedro, André, Tiago, João, Filipe, Bartolomeu, Mateus, Tomé, Tiago filho de Alfeu, Tadeu, Simão e Judas.',ref:'Mateus 10:1-4'},
+  {type:'tf',q:'A parábola do Bom Samaritano responde à pergunta "Quem é o meu próximo?"',correct:true,explain:'Um escriba perguntou a Jesus quem era seu próximo. Jesus respondeu com a parábola do samaritano que ajudou o homem espancado na estrada.',ref:'Lucas 10:29-37'},
+  {type:'tf',q:'Jesus curou dez leprosos, mas apenas um voltou para agradecer.',correct:true,explain:'"Não eram dez os que foram purificados? Onde estão os nove?" O único que voltou era samaritano. Lição sobre gratidão e fé.',ref:'Lucas 17:12-19'},
+  {type:'tf',q:'Jesus ressuscitou Lázaro três dias após sua morte, assim como Ele próprio ressuscitaria no terceiro dia.',correct:false,explain:'Lázaro estava morto há QUATRO dias, não três. "Senhor, já cheira mal, pois é o quarto dia." Jesus esperou propositalmente para revelar a glória de Deus de forma ainda mais evidente.',ref:'João 11:17,39'},
+  {type:'tf',q:'No dia de Pentecostes, João pregou e cinco mil pessoas se batizaram.',correct:false,explain:'Foi PEDRO quem pregou no Pentecostes — não João nem Paulo. E foram TRÊS MIL, não cinco mil. Paulo só foi convertido muito depois, perseguindo a Igreja antes de encontrar Jesus no caminho de Damasco.',ref:'Atos 2:14,41'},
+  {type:'tf',q:'Cornélio foi o primeiro judeu da diáspora a receber o Espírito Santo após o Pentecostes.',correct:false,explain:'Cornélio era GENTIO — um centurião romano, não judeu. Sua conversão foi revolucionária porque provou a Pedro que o Evangelho era para todos os povos, quebrando a barreira judaico-gentílica.',ref:'Atos 10:44-48'},
+  {type:'tf',q:'Paulo e Barnabé fizeram juntos a primeira viagem missionária.',correct:true,explain:'Atos 13-14 registra a primeira viagem: Antioquia, Chipre, Ásia Menor. Eles pregaram em sinagogas e fundaram igrejas gentílicas.',ref:'Atos 13:2-3'},
+  {type:'tf',q:'O livro de Apocalipse foi escrito pelo apóstolo Paulo durante seu cativeiro em Roma.',correct:false,explain:'O Apocalipse foi escrito por JOÃO, não Paulo. João estava exilado em Patmos por causa da palavra de Deus. Paulo escreveu cartas pastorais e teológicas, mas nunca o Apocalipse.',ref:'Apocalipse 1:9'},
+  {type:'tf',q:'O número 666 em Apocalipse é descrito como o número da Besta.',correct:true,explain:'"Aqui está a sabedoria: quem tem entendimento calcule o número da besta... o seu número é seiscentos e sessenta e seis."',ref:'Apocalipse 13:18'},
+  {type:'tf',q:'O Sermão do Monte contém as Beatitudes e o Pai Nosso.',correct:true,explain:'Mateus 5-7 registra o Sermão do Monte, incluindo as Beatitudes (5:3-11), o Pai Nosso (6:9-13) e muitos ensinamentos sobre o Reino.',ref:'Mateus 5-7'},
+  {type:'tf',q:'Jesus jejuou por 40 dias antes de Seu batismo, para se preparar espiritualmente.',correct:false,explain:'O jejum aconteceu DEPOIS do batismo, não antes. Imediatamente após o batismo, o Espírito levou Jesus ao deserto. O batismo foi o evento inaugural; o jejum e as tentações vieram a seguir.',ref:'Mateus 4:1-2'},
+  {type:'tf',q:'O apóstolo Pedro duvidou da ressurreição e pediu para tocar as marcas dos pregos.',correct:false,explain:'Foi TOMÉ, não Pedro, que disse: "Se eu não vir nas suas mãos o sinal dos pregos... não crerei." Pedro visitou o túmulo e ficou admirado, mas Tomé foi quem exigiu prova física.',ref:'João 20:24-28'},
+  {type:'tf',q:'Jesus nasceu na Judeia durante o reinado do rei Herodes.',correct:true,explain:'Mateus 2:1: "Havendo Jesus nascido em Belém da Judeia, no tempo do rei Herodes." Herodes ordenou a morte das crianças de até dois anos.',ref:'Mateus 2:1,16'},
+  {type:'tf',q:'Ester foi convocada pelo rei para revelar o plano de Hamã contra os judeus.',correct:false,explain:'Ester foi SEM SER CHAMADA — o que era punível de morte por lei. Ela disse: "Se perecer, que pereça." O rei Assuero estendeu o cetro de ouro voluntariamente, aceitando sua presença.',ref:'Ester 4:11 / 5:1-2'},
+  {type:'tf',q:'O Pai Nosso começa com as palavras "Pai nosso que estás nos céus".',correct:true,explain:'Jesus ensinou esta oração como modelo em Mateus 6:9-13 e Lucas 11:2-4.',ref:'Mateus 6:9'},
+  {type:'tf',q:'A palavra "Aleluia" vem do hebraico e significa "louvai a Deus".',correct:true,explain:'"Hallel" = louvor + "Yah" (abreviação de YHWH). "Aleluia" é usada em toda a cristandade.',ref:'Salmo 106:1 / Apocalipse 19:1'},
+  {type:'tf',q:'O Tabernáculo no deserto foi construído por Moisés com pedras trazidas do monte Sinai.',correct:false,explain:'O Tabernáculo foi construído com OFERTAS VOLUNTÁRIAS do povo — ouro, prata, bronze, linho, couro. Não havia pedras do Sinai. Bezalel foi o artesão-chefe, nomeado e capacitado por Deus.',ref:'Êxodo 25:8'},
+  {type:'tf',q:'Golias era da cidade de Gate, dos filisteus.',correct:true,explain:'"Saiu do arraial dos filisteus um homem guerreiro chamado Golias, de Gate." Gate era uma das cinco cidades-estado filistéias.',ref:'1 Samuel 17:4'},
+  {type:'tf',q:'O rei Ezequias encontrou o livro da Lei e promoveu a maior reforma religiosa de Judá.',correct:false,explain:'Foi JOSIAS, não Ezequias, quem encontrou o livro da Lei. Josias rasgou as vestes ao ouvir sua leitura e promoveu uma reforma radical, destruindo altares pagãos por todo o reino.',ref:'2 Reis 22:8-13'},
+  {type:'tf',q:'A Transfiguração de Jesus aconteceu num monte alto com Pedro, André e João.',correct:false,explain:'Os três presentes foram Pedro, TIAGO e João — não André. Esses mesmos três discípulos também foram chamados a acompanhar Jesus no Getsêmani na noite de Sua prisão.',ref:'Mateus 17:1-3'},
+  {type:'tf',q:'Filipenses 4:13 diz: "Posso todas as coisas naquele que me fortalece."',correct:true,explain:'Este versículo de Paulo, escrito da prisão, expressa confiança na força que vem de Cristo em todas as circunstâncias.',ref:'Filipenses 4:13'},
+  {type:'tf',q:'O rio Jordão foi dividido quando Josué golpeou as águas com seu cajado, como Moisés.',correct:false,explain:'Josué não usou cajado. Foram os SACERDOTES carregando a Arca da Aliança que entraram nas águas. Quando os pés dos sacerdotes tocaram o Jordão, as águas se detiveram.',ref:'Josué 3:14-17'},
+  {type:'tf',q:'O livro de Gênesis cobre desde a Criação até a morte de José no Egito.',correct:true,explain:'Gênesis vai da Criação (cap. 1) ao patriarca José (cap. 37-50), terminando com a morte de José no Egito com 110 anos.',ref:'Gênesis 50:26'},
+  {type:'tf',q:'Jesus nasceu num palácio em Belém, pois o rei Herodes o recebeu como descendente de Davi.',correct:false,explain:'Jesus nasceu numa MANJEDOURA humilde porque não havia lugar na estalagem. Herodes na verdade tentou matar Jesus — não o recebeu. A humildade do nascimento contrasta gloriosamente com Sua divindade.',ref:'Lucas 2:7'},
+  {type:'tf',q:'O rei Salomão dançou diante do Senhor quando a Arca foi levada para o Templo recém-construído.',correct:false,explain:'Foi DAVI quem dançou com toda a força diante do Senhor quando a Arca subiu para Jerusalém. Sua esposa Mical o desprezou. Salomão trouxe a Arca ao Templo, mas não há relato de dança.',ref:'2 Samuel 6:14-16'},
+  {type:'tf',q:'O profeta Natã confrontou Davi com uma parábola depois do pecado com Bate-Seba.',correct:true,explain:'Natã contou a parábola do homem rico que roubou a única ovelha do pobre. Davi indignou-se — e Natã disse: "Tu és esse homem."',ref:'2 Samuel 12:1-7'},
+  {type:'tf',q:'O Espírito Santo desceu em forma de chamas de fogo sobre Jesus no seu batismo.',correct:false,explain:'O Espírito desceu como POMBA sobre Jesus no batismo — não fogo. O fogo veio no Pentecostes, sobre os discípulos reunidos no cenáculo. São dois eventos distintos.',ref:'Mateus 3:16-17'},
+  {type:'tf',q:'Jesus perguntou a Pedro uma única vez se ele O amava, perdonando-o completamente.',correct:false,explain:'Jesus perguntou TRÊS vezes — uma por cada negação de Pedro. Cada pergunta doía, mas cada resposta era uma restauração. "Apascenta minhas ovelhas." A graça restaurou cada passo da queda.',ref:'João 21:15-17'},
+  {type:'tf',q:'O livro de Provérbios diz que o temor do Senhor é o princípio da sabedoria.',correct:true,explain:'"O temor do Senhor é o princípio da sabedoria, e o conhecimento do Santo é a prudência." Esta é a frase-chave do livro.',ref:'Provérbios 9:10'},
+  {type:'tf',q:'Paulo escreveu a carta aos Filipenses durante sua segunda viagem missionária, em Atenas.',correct:false,explain:'Filipenses é uma das "cartas do cativeiro" — Paulo a escreveu PRESO, provavelmente em Roma. Ainda assim transborda alegria: "Regozijai-vos no Senhor sempre!" — escrita de dentro de uma cela.',ref:'Filipenses 1:13 / 4:4'},
+  {type:'tf',q:'A serpente de bronze feita por Moisés curava quem a tocasse com fé e arrependimento.',correct:false,explain:'A cura vinha de OLHAR para a serpente, não de tocá-la. "Todo aquele que for picado e olhar para ela viverá." Jesus usou exatamente essa imagem: "Assim importa que o Filho do Homem seja levantado."',ref:'Números 21:9 / João 3:14'},
+  {type:'tf',q:'O Espírito Santo é chamado de "Consolador" no Evangelho de João.',correct:true,explain:'Jesus prometeu enviar o "Parakletos" (Consolador, Auxiliador). Esta palavra grega significa alguém chamado ao lado para ajudar.',ref:'João 14:16,26'},
+  {type:'tf',q:'O livro de Atos foi escrito pelo apóstolo Paulo como continuação de suas epístolas missionárias.',correct:false,explain:'Atos foi escrito por LUCAS, não Paulo. Ambos os livros — Lucas e Atos — são endereçados a Teófilo e escritos no mesmo estilo grego refinado. Lucas era médico gentio e companheiro de Paulo.',ref:'Lucas 1:3 / Atos 1:1'},
+  {type:'tf',q:'O mar da Galileia também é chamado de lago de Genesaré ou mar de Tiberíades.',correct:true,explain:'O mesmo corpo de água aparece com três nomes no NT: mar da Galileia, lago de Genesaré e mar de Tiberíades. É um lago de água doce.',ref:'João 6:1 / Lucas 5:1'},
+  {type:'tf',q:'Moisés não entrou na terra prometida porque adorou o bezerro de ouro juntamente com o povo.',correct:false,explain:'Moisés foi impedido por FERIR A ROCHA duas vezes em Cades, quando Deus mandou falar a ela. O bezerro de ouro foi pecado do POVO — Moisés na verdade intercedeu por eles naquela ocasião.',ref:'Números 20:8-12'},
+  {type:'tf',q:'José do Egito jamais perdoou seus irmãos, mantendo-os como servos no Egito até sua morte.',correct:false,explain:'José os PERDOOU completamente: "Não vos entristeçais por me terdes vendido aqui; porque Deus me enviou antes de vós para salvar vidas." É um dos maiores exemplos de perdão e providência na Bíblia.',ref:'Gênesis 45:4-8'},
+  {type:'tf',q:'O profeta Jeremias escreveu sobre o Servo Sofredor no capítulo 53, prevendo a morte de Cristo.',correct:false,explain:'O capítulo 53 é de ISAÍAS, não Jeremias. Isaías 53 descreve o sofrimento, rejeição, morte vicária e exaltação do Servo com tal detalhe profético que é chamado de "o Quinto Evangelho".',ref:'Isaías 53'},
+  {type:'tf',q:'A Páscoa judaica celebra a entrega da Lei no Sinai, sendo o cordeiro um símbolo da aliança.',correct:false,explain:'A Páscoa (Pessach) celebra a LIBERTAÇÃO DO EGITO — a décima praga e a saída. O Pentecostes/Shavuot celebra a entrega da Lei. O cordeiro era sacrificado e seu sangue protegia as primogênitas.',ref:'Êxodo 12:5-7 / João 1:29'},
+  {type:'tf',q:'Jacó trabalhou 14 anos para se casar com Raquel.',correct:true,explain:'Jacó trabalhou 7 anos por Raquel, mas Labão o enganou dando-lhe Lia. Então trabalhou mais 7 anos para finalmente se casar com Raquel.',ref:'Gênesis 29:20-28'},
+  {type:'tf',q:'O Novo Testamento foi originalmente escrito em latim, sendo Jerônimo seu principal autor.',correct:false,explain:'O NT foi escrito em GREGO koiné — a língua franca do Mediterrâneo no século I. A Vulgata Latina de Jerônimo (séc. IV) foi uma tradução posterior. Jerônimo não escreveu o NT; ele o traduziu.',ref:'Linguística do NT'},
+  {type:'tf',q:'A última ceia de Jesus foi realizada no Cenáculo, um aposento elevado em Jerusalém.',correct:true,explain:'"Ele vos mostrará um grande cenáculo mobilado; preparai lá." O cenáculo (sala superior) era um cômodo grande no andar de cima de uma casa.',ref:'Lucas 22:12'},
+  {type:'tf',q:'Um vento forte varreu as águas no princípio, preparando a terra para a criação da luz.',correct:false,explain:'O texto hebraico diz que o ESPÍRITO DE DEUS (ruach Elohim) pairava sobre as águas — como uma ave sobre seu ninho. A imagem é de presença viva e criativa, não de um vento agitador.',ref:'Gênesis 1:2'},
+  {type:'tf',q:'Jesus nasceu de Maria, que era virgem, conforme cumprimento de profecia.',correct:true,explain:'Isaías 7:14 profetizou: "A virgem conceberá." Mateus 1:23 cita esta passagem no relato do nascimento de Jesus.',ref:'Mateus 1:23 / Isaías 7:14'},
+  {type:'tf',q:'O Sl 22 começa com as palavras que Jesus clamou na cruz.',correct:true,explain:'"Deus meu, Deus meu, por que me abandonaste?" — Jesus citou o Salmo 22:1 na cruz. O salmo todo descreve o sofrimento e a exaltação do justo.',ref:'Salmo 22:1 / Mateus 27:46'},
+],
+fundo:[
+  {type:'mc',q:'Quantos livros tem a Bíblia Protestante?',opts:['72','73','60','66'],correct:3,explain:'A Bíblia Protestante tem 66 livros: 39 no Antigo Testamento e 27 no Novo Testamento. Bíblias Católica e Ortodoxa incluem livros deuterocanônicos adicionais.',ref:'Cânon Bíblico Protestante'},
+  {type:'mc',q:'Qual foi a primeira das dez pragas do Egito?',opts:['Água transformada em sangue','Gafanhotos','Morte dos primogênitos','Trevas'],correct:0,explain:'A primeira praga foi a transformação das águas do Nilo em sangue (Êx 7:20). A décima e mais devastadora foi a morte dos primogênitos.',ref:'Êxodo 7:14-24'},
+  {type:'mc',q:'Qual foi o primeiro milagre de Jesus no Evangelho de João?',opts:['Transformação da água em vinho','Multiplicação dos pães','Cura do paralítico','Ressurreição de Lázaro'],correct:0,explain:'Nas bodas de Caná, Jesus transformou água em vinho a pedido de Sua mãe. João chama este ato de "o início dos seus sinais".',ref:'João 2:1-11'},
+  {type:'mc',q:'Qual rei mandou lançar Daniel na cova dos leões?',opts:['Dario, o Medo','Ciro','Nabucodonosor','Belsazar'],correct:0,explain:'O rei Dario foi enganado por conselheiros invejosos que criaram um decreto proibindo oração a qualquer deus por 30 dias.',ref:'Daniel 6:6-16'},
+  {type:'mc',q:'Quanto tempo Jonas ficou dentro do grande peixe?',opts:['3 dias e 3 noites','7 dias','40 dias','1 dia'],correct:0,explain:'"Esteve Jonas no ventre do peixe três dias e três noites." Jesus usou isso como sinal de Sua própria morte e ressurreição.',ref:'Jonas 1:17 / Mateus 12:40'},
+  {type:'mc',q:'Em qual cidade Paulo nasceu?',opts:['Corinto','Jerusalém','Roma','Tarso'],correct:3,explain:'Paulo (Saulo) nasceu em Tarso, na Cilícia (atual Turquia). Era cidadão romano de nascimento — privilégio que usaria em sua defesa legal.',ref:'Atos 22:3'},
+  {type:'mc',q:'Qual profeta anunciou "Voz que clama no deserto: preparai o caminho do Senhor"?',opts:['Isaías','Amós','Jeremias','Ezequiel'],correct:0,explain:'Isaías 40:3 profetizou a missão de João Batista séculos antes. Os quatro Evangelhos citam esta passagem ao apresentar João.',ref:'Isaías 40:3 / Marcos 1:3'},
+  {type:'mc',q:'Qual NÃO é uma das Beatitudes do Sermão do Monte?',opts:['Bem-aventurados os ricos','Bem-aventurados os pacificadores','Bem-aventurados os misericordiosos','Bem-aventurados os mansos'],correct:0,explain:'Jesus disse "bem-aventurados os pobres de espírito", não os ricos. As Beatitudes descrevem o caráter do cidadão do Reino de Deus.',ref:'Mateus 5:3-11'},
+  {type:'mc',q:'Qual era a ocupação de Pedro antes de seguir Jesus?',opts:['Pastor','Carpinteiro','Cobrador de impostos','Pescador'],correct:3,explain:'Pedro, seu irmão André e os filhos de Zebedeu eram pescadores no mar da Galileia quando Jesus os chamou: "Vinde após mim, e eu vos farei pescadores de homens."',ref:'Mateus 4:18-20'},
+  {type:'mc',q:'Quantos dias Jesus ficou no deserto sendo tentado?',opts:['40','100','7','14'],correct:0,explain:'"Tendo jejuado quarenta dias e quarenta noites, depois teve fome." Os 40 dias ecoam os 40 anos de Israel no deserto.',ref:'Mateus 4:1-11'},
+  {type:'mc',q:'Qual é o versículo mais curto da Bíblia?',opts:['"Amém."','"Orai sem cessar."','"Deus é amor."','"Jesus chorou."'],correct:3,explain:'"Jesus chorou" (João 11:35) é o versículo mais curto. O contexto é a morte de Lázaro — revelando profundamente a humanidade de Jesus.',ref:'João 11:35'},
+  {type:'mc',q:'Em qual livro está a história do "Vale dos Ossos Secos"?',opts:['Ezequiel','Daniel','Isaías','Jeremias'],correct:0,explain:'Ezequiel 37 — Deus mostra ao profeta um vale cheio de ossos que ganham vida progressivamente, simbolizando a restauração que Deus daria a Israel.',ref:'Ezequiel 37:1-14'},
+  {type:'mc',q:'Qual era a profissão de Mateus antes de seguir Jesus?',opts:['Fariseu','Pescador','Carpinteiro','Cobrador de impostos'],correct:3,explain:'Mateus era publicano — cobrador de impostos romano, desprezado pelos judeus. Jesus o chamou diretamente da "mesa de cobrança".',ref:'Mateus 9:9'},
+  {type:'mc',q:'Qual mulher no AT disse "Onde tu morreres, morrerei eu"?',opts:['Rute','Raabe','Ester','Débora'],correct:0,explain:'Rute disse isso a sua sogra Noemi ao recusar retornar à Moabe. Este ato de lealdade radical a tornou bisavó do rei Davi.',ref:'Rute 1:16'},
+  {type:'mc',q:'Em qual monte Moisés recebeu os Dez Mandamentos?',opts:['Monte Nebo','Monte Moriá','Monte Carmelo','Monte Sinai'],correct:3,explain:'O Monte Sinai (também chamado Horebe) é onde Deus Se manifestou em fogo e entregou a Lei a Moisés.',ref:'Êxodo 19:20'},
+  {type:'mc',q:'Qual milagre de Jesus é narrado nos quatro Evangelhos?',opts:['Transformação da água em vinho','Ressurreição de Lázaro','Cura do cego de nascença','Multiplicação dos pães e peixes'],correct:3,explain:'A multiplicação dos pães e peixes é o único milagre (além da ressurreição) presente nos quatro Evangelhos.',ref:'Jo 6 / Mt 14 / Mc 6 / Lc 9'},
+  {type:'mc',q:'O que é o "Shema Israel" de Deuteronômio 6:4?',opts:['A confissão central sobre a unicidade de Deus','Um salmo real de Davi','Uma profecia sobre o Messias','Uma lei alimentar judaica'],correct:0,explain:'"Ouve, Israel: o Senhor nosso Deus é o único Senhor." O Shema é a oração mais importante do judaísmo. Jesus a citou como o maior mandamento.',ref:'Deuteronômio 6:4 / Marcos 12:29'},
+  {type:'mc',q:'Qual profeta foi levado vivo ao céu?',opts:['Ambos Elias e Enoque','Eliseu','Somente Elias','Somente Enoque'],correct:0,explain:'Enoque "andou com Deus e já não existia, porque Deus o tomou" (Gn 5:24). Elias subiu num redemoinho com carro de fogo (2Rs 2:11).',ref:'Gênesis 5:24 / 2 Reis 2:11'},
+  {type:'mc',q:'Qual palavra significa "ungido" em hebraico?',opts:['Mashiach (Messias)','Eloim','Shalom','Meod'],correct:0,explain:'"Mashiach" em hebraico e "Christos" em grego = "O Ungido". Reis, sacerdotes e profetas eram ungidos no AT como prefigurações do Ungido definitivo.',ref:'Daniel 9:25 / João 1:41'},
+  {type:'mc',q:'Qual foi a missão de Jonas segundo Deus?',opts:['Confrontar o rei Acabe','Reconstruir o templo','Profetizar contra Babilônia','Ir a Nínive e pregar contra a sua maldade'],correct:3,explain:'Deus enviou Jonas a Nínive para proclamar juízo. Jonas fugiu porque não queria que os assírios se arrependessem — o que de fato aconteceu.',ref:'Jonas 1:2'},
+  {type:'mc',q:'Qual foi o sinal pedido por Gideão para confirmar a chamada de Deus?',opts:['O velo de lã molhado, depois seco','Uma serpente de bronze','Trombetas que derrubaram muros','Sol parado no céu'],correct:0,explain:'Gideão pediu que só o velo ficasse molhado (chão seco); depois o oposto. Deus atendeu ambos, confirmando Sua chamada.',ref:'Juízes 6:36-40'},
+  {type:'mc',q:'Qual livro do NT começa com "No princípio era o Verbo"?',opts:['Mateus','Marcos','Lucas','João'],correct:3,explain:'"No princípio era o Verbo [Logos], e o Verbo estava com Deus, e o Verbo era Deus." O prólogo de João é uma das mais profundas declarações da Bíblia.',ref:'João 1:1'},
+  {type:'mc',q:'Quantas cartas Paulo escreveu no NT?',opts:['13','16','7','10'],correct:0,explain:'O cânon reconhece 13 cartas paulinas: Romanos, 1-2 Coríntios, Gálatas, Efésios, Filipenses, Colossenses, 1-2 Tessalonicenses, 1-2 Timóteo, Tito e Filemom.',ref:'Cânon NT'},
+  {type:'mc',q:'Qual dos Evangelhos não contém parábolas de Jesus?',opts:['Mateus','Marcos','Lucas','João'],correct:3,explain:'O Evangelho de João não contém parábolas típicas. João apresenta "discursos" e "sinais" com metáforas como "Eu sou o pão da vida".',ref:'Evangelho de João'},
+  {type:'mc',q:'O que significa o nome "Emanuel"?',opts:['Luz do mundo','Salvador do povo','Rei poderoso','Deus conosco'],correct:3,explain:'"Emanuel" (עִמָּנוּאֵל) = "Deus conosco". Isaías 7:14 profetizou que o Messias seria chamado assim, cumprido na encarnação de Jesus.',ref:'Isaías 7:14 / Mateus 1:23'},
+  {type:'mc',q:'Qual texto do AT descreve o "Servo Sofredor" que carrega os pecados do povo?',opts:['Salmos 22','Daniel 9','Isaías 53','Jeremias 31'],correct:2,explain:'Isaías 52:13-53:12 é o texto messiânico mais citado no NT: "Por suas chagas fomos sarados" (Is 53:5).',ref:'Isaías 53:5'},
+  {type:'mc',q:'Qual crise afligiu Jó como provação?',opts:['Paralisia','Lepra','Cegueira','Chagas/úlceras por todo o corpo'],correct:3,explain:'"Feriu Jó com chagas malignas, desde a planta do pé ao alto da cabeça." Mesmo assim, Jó não pecou com seus lábios.',ref:'Jó 2:7-10'},
+  {type:'mc',q:'Qual rei se tornou famoso pela sabedoria, pelos provérbios e pelo Templo?',opts:['Davi','Saul','Salomão','Josias'],correct:2,explain:'Salomão recebeu sabedoria incomparável, escreveu Provérbios e Eclesiastes, e construiu o primeiro Templo de Jerusalém.',ref:'1 Reis 3-10'},
+  {type:'mc',q:'Como Elias derrotou os profetas de Baal no monte Carmelo?',opts:['Enviou uma praga','Com água do mar','Com uma espada sagrada','Invocou fogo do céu que consumiu o sacrifício'],correct:3,explain:'1 Reis 18 — Após horas sem resposta ao Baal, Elias orou brevemente e fogo do céu consumiu o sacrifício, a lenha, as pedras e até a água.',ref:'1 Reis 18:38'},
+  {type:'mc',q:'Qual é a ordem correta dos cinco primeiros livros da Bíblia?',opts:['Gênesis, Êxodo, Levítico, Números, Deuteronômio','Gênesis, Levítico, Êxodo, Números, Deuteronômio','Gênesis, Êxodo, Números, Levítico, Deuteronômio','Gênesis, Êxodo, Deuteronômio, Levítico, Números'],correct:0,explain:'Os cinco livros do Pentateuco (Torah): Gênesis, Êxodo, Levítico, Números e Deuteronômio — atribuídos à autoria de Moisés.',ref:'Pentateuco / Torah'},
+  {type:'mc',q:'Em qual livro está a história de Ester?',opts:['Rute','Esdras','Ester','Neemias'],correct:2,explain:'O livro de Ester narra como a jovem judia, rainha da Pérsia, salvou o povo judeu de um genocídio planejado pelo ministro Hamã. Celebrado na festa de Purim.',ref:'Livro de Ester'},
+  {type:'mc',q:'Qual era a ocupação de José antes de se tornar vizir do Egito?',opts:['Prisioneiro e intérprete de sonhos','Conselheiro do rei','Comerciante','Faraó adjunto'],correct:0,explain:'José foi vendido como escravo, depois falsamente acusado e preso. Na prisão, interpretou sonhos. Quando interpretou o sonho do Faraó, foi alçado a governador.',ref:'Gênesis 39-41'},
+  {type:'mc',q:'Qual foi a ocupação de Paulo além de pregador do Evangelho?',opts:['Fazedor de tendas','Carpinteiro','Médico','Pescador'],correct:0,explain:'Paulo era fazedor de tendas (couroeiro) e trabalhava com as mãos para não ser um fardo às igrejas. Em Atos 18:3 trabalhou com Áquila e Priscila.',ref:'Atos 18:3 / 1 Tessalonicenses 2:9'},
+  {type:'mc',q:'Em qual monte Elias desafiou os profetas de Baal?',opts:['Monte Sinai','Monte Moriá','Monte Carmelo','Monte Sião'],correct:2,explain:'O Monte Carmelo foi o palco do duelo épico entre Elias e 450 profetas de Baal, provando que o Senhor era o único Deus verdadeiro.',ref:'1 Reis 18:19'},
+  {type:'mc',q:'Qual personagem do AT sobreviveu na boca do leão graças à proteção divina?',opts:['José','Elias','Daniel','Ezequiel'],correct:2,explain:'Daniel foi lançado na cova dos leões por decreto do rei Dario, mas um anjo fechou a boca dos leões. Daniel saiu ileso no dia seguinte.',ref:'Daniel 6:22'},
+
+  {type:'mc',q:'Qual profeta se escondeu numa caverna no monte Horebe após fugir de Jezabel?',opts:['Miquéias','Isaías','Eliseu','Elias'],correct:3,explain:'Após a vitória no Carmelo, Jezabel ameaçou Elias de morte. Ele fugiu para o deserto e depois foi até o monte Horebe, onde Deus falou a ele no "silêncio delicado".',ref:'1 Reis 19:8-13'},
+  {type:'mc',q:'Em qual livro está escrita a famosa frase "Ainda que eu ande pelo vale da sombra da morte"?',opts:['Jó','Isaías','Salmos','Provérbios'],correct:2,explain:'Salmo 23:4 — "Ainda que eu ande pelo vale da sombra da morte, não temerei mal algum, porque tu estás comigo." Escrito por Davi, o ex-pastor.',ref:'Salmo 23:4'},
+  {type:'mc',q:'O que significa o nome "Peniel" que Jacó deu ao lugar onde lutou com Deus?',opts:['Força de Deus','Graça de Deus','Casa de Deus','Face de Deus'],correct:3,explain:'"Chamou o nome daquele lugar Peniel, pois disse: vi a Deus face a face e a minha alma foi salva." Peniel = face (panim) de Deus (El).',ref:'Gênesis 32:30'},
+  {type:'mc',q:'Qual foi o pecado específico de Acã que causou a derrota em Ai?',opts:['Desobedecer a Josué','Fugir da batalha','Idolatria','Ter roubado itens consagrados ao Senhor'],correct:3,explain:'Acã tomou secretamente um manto de Sinear, 200 siclos de prata e um lingote de ouro — itens consagrados a Deus. Israel foi derrotado em Ai por causa deste pecado.',ref:'Josué 7:20-21'},
+  {type:'mc',q:'Qual dos quatro Evangelhos foi escrito especialmente para leitores gentios?',opts:['Mateus','Marcos','Lucas','João'],correct:2,explain:'Lucas, médico gentio e companheiro de Paulo, escreveu para Teófilo e leitores greco-romanos, explicando costumes judeus e destacando o alcance universal do Evangelho.',ref:'Lucas 1:1-4 / Colossenses 4:14'},
+  {type:'mc',q:'Qual era a moeda usada para pagar o imposto do templo em Mateus 22?',opts:['Denário','Dracma','Siclo','Óbolo'],correct:0,explain:'Os fariseus perguntaram se era lícito pagar tributo a César. Jesus pediu um denário — a moeda romana com a imagem de César — e disse: "Dai a César o que é de César."',ref:'Mateus 22:19-21'},
+  {type:'mc',q:'Qual homem do AT é descrito como "amigo de Deus"?',opts:['Noé','Davi','Abraão','Moisés'],correct:2,explain:'"Abraão creu em Deus, e isso lhe foi imputado como justiça, e ele foi chamado amigo de Deus" (Tiago 2:23). Isaías 41:8 também usa esta expressão.',ref:'Tiago 2:23 / Isaías 41:8'},
+  {type:'mc',q:'Qual é a característica central da fé segundo Hebreus 11:1?',opts:['Confiança nos milagres','Obediência à lei','Certeza das obras passadas','Substância das coisas que se esperam e certeza das que não se veem'],correct:3,explain:'"A fé é a substância das coisas que se esperam e a certeza das que não se veem." Hebreus 11 lista os "heróis da fé" do AT.',ref:'Hebreus 11:1'},
+  {type:'mc',q:'Qual foi o nome original de Paulo antes de sua conversão?',opts:['Barnabé','Timóteo','Silas','Saulo'],correct:3,explain:'Paulo era fariseu e chamava-se Saulo de Tarso. O nome Paulo (romano) passou a ser usado após sua conversão, especialmente durante as viagens missionárias.',ref:'Atos 13:9'},
+  {type:'mc',q:'Qual profeta disse: "Eis que conceberá uma virgem e dará à luz um filho"?',opts:['Miquéias','Jeremias','Isaías','Ezequiel'],correct:2,explain:'Isaías 7:14 profetizou este sinal messiânico. O NT (Mateus 1:23) cita explicitamente este versículo no relato do nascimento virginal de Jesus.',ref:'Isaías 7:14'},
+  {type:'mc',q:'Qual dos juízes de Israel derrotou os midianitas com apenas 300 homens?',opts:['Sansão','Jefté','Gideão','Baraque'],correct:2,explain:'Deus reduziu o exército de Gideão de 32.000 para 300, para que Israel não se gloriasse. Com jarras, tochas e trombetas, derrotaram o exército midianita.',ref:'Juízes 7:2-22'},
+  {type:'mc',q:'Qual carta de Paulo trata especialmente da unidade e do corpo de Cristo?',opts:['Efésios','Filipenses','Colossenses','Gálatas'],correct:0,explain:'Efésios é a carta da eclesiologia por excelência — o corpo de Cristo, a Noiva, a edificação na unidade, o ministério quíntuplo e a armadura espiritual.',ref:'Efésios 1:22-23 / 4:11-13'},
+  {type:'mc',q:'Qual era a missão dos levitas no sistema religioso de Israel?',opts:['Servir no templo e ensinar a Lei','Liderar o exército','Julgar os casos civis','Governar as cidades'],correct:0,explain:'A tribo de Levi foi separada para o serviço sagrado: cuidar do tabernáculo/templo, tocar instrumentos, carregar a Arca e ensinar a Lei ao povo.',ref:'Números 1:50-51 / Deuteronômio 33:10'},
+  {type:'mc',q:'Qual é o tema central da carta aos Gálatas?',opts:['A segunda vinda','Os dons espirituais','A ressurreição de Cristo','A liberdade em Cristo contra o legalismo'],correct:3,explain:'Gálatas defende com vigor que a justificação é pela fé em Cristo, não pelas obras da Lei. Paulo chama os que pregam outro evangelho de "anatema".',ref:'Gálatas 2:16 / 1:8-9'},
+  {type:'mc',q:'Em qual cidade Paulo pregou no Areópago sobre "o Deus desconhecido"?',opts:['Corinto','Éfeso','Filipos','Atenas'],correct:3,explain:'Em Atenas, Paulo viu um altar com a inscrição "Ao Deus desconhecido" e aproveitou para pregar o Deus criador que ressuscitou Jesus dos mortos.',ref:'Atos 17:22-23'},
+  {type:'mc',q:'Quantos anos o povo de Israel ficou no deserto antes de entrar em Canaã?',opts:['20','30','40','50'],correct:2,explain:'"Vossas carcaças cairão neste deserto; vos farei andar errantes por 40 anos." Uma geração inteira precisou morrer antes que os filhos entrassem na terra.',ref:'Números 14:29-33'},
+  {type:'mc',q:'Qual é o livro mais curto do Antigo Testamento?',opts:['Obadias','Naum','Filemom','Jonas'],correct:0,explain:'Obadias, com apenas 21 versículos, é o menor livro do AT. É uma profecia contra Edom. Filemom é o menor do NT.',ref:'Livro de Obadias'},
+  {type:'mc',q:'Qual é o livro mais longo da Bíblia em número de versículos?',opts:['Gênesis','Salmos','Isaías','Jeremias'],correct:1,explain:'O livro de Salmos tem 2.461 versículos, tornando-o o maior livro da Bíblia, seguido por Jeremias (1.364) e Gênesis (1.533).',ref:'Livro de Salmos'},
+  {type:'mc',q:'O que significa "Êxodo" em grego?',opts:['Libertação','Saída','Milagre','Viagem'],correct:1,explain:'"Êxodo" vem do grego "exodos" = saída. O livro narra a grande saída do povo de Israel da escravidão do Egito.',ref:'Êxodo 1:1 / Etimologia'},
+  {type:'mc',q:'Qual foi o sinal que Deus deu a Gideão para confirmar que ele libertaria Israel?',opts:['Fogo do céu','Velo de lã molhado ou seco','Trombeta tocada sozinha','Espada flamejante'],correct:1,explain:'Gideão pediu que o velo ficasse molhado (chão seco) e depois o inverso. Deus atendeu ambas as vezes, confirmando Sua chamada.',ref:'Juízes 6:36-40'},
+  {type:'mc',q:'Qual foi o crime de Acabe e Jezabel que Elias condenou?',opts:['Idolatria com o Baal e assassinato de Nabote','Desviar o dízimo do templo','Aliar-se com a Assíria','Casar com estrangeiros'],correct:0,explain:'Acabe e Jezabel adoravam Baal, massacraram profetas do Senhor e assassinaram Nabote para tomar sua vinha. Elias os confrontou diretamente.',ref:'1 Reis 18:18 / 21:19'},
+  {type:'mc',q:'O que é o "Magnificat" de Maria em Lucas 1?',opts:['Uma profecia sobre a destruição de Jerusalém','O cântico de louvor de Maria ao receber a notícia da gravidez','A oração que Jesus ensinou','O discurso de Zacarias'],correct:1,explain:'Maria visitou Isabel e entoou o Magnificat (Lc 1:46-55): "Minha alma engrandece ao Senhor." É o cântico de louvor mais longo de uma mulher na Bíblia.',ref:'Lucas 1:46-55'},
+  {type:'mc',q:'Qual apóstolo foi o primeiro a morrer (mártir)?',opts:['Pedro','Paulo','Estêvão','Tiago filho de Zebedeu'],correct:3,explain:'Tiago, filho de Zebedeu e irmão de João, foi executado pelo rei Herodes Agripa I com espada — o primeiro apóstolo a morrer como mártir.',ref:'Atos 12:2'},
+  {type:'mc',q:'Qual é o significado do nome "Betlehem" (Belém)?',opts:['Casa de oração','Casa do pão','Casa da luz','Casa de Davi'],correct:1,explain:'"Bet-lechem" em hebraico = "casa do pão". Ironia significativa: Jesus, o Pão da Vida, nasceu na cidade cujo nome significa "casa do pão".',ref:'Gênesis 35:19 / João 6:35'},
+  {type:'mc',q:'Qual profeta confrontou o rei Davi após o pecado com Bate-Seba e Urias?',opts:['Gade','Natã','Asafe','Ageu'],correct:1,explain:'Natã foi a Davi com a parábola da ovelha roubada. Quando Davi se indignou, Natã disse: "Tu és esse homem!" — um dos confrontos mais dramáticos da Bíblia.',ref:'2 Samuel 12:1-7'},
+  {type:'mc',q:'Qual das sete cartas de Apocalipse repreende a Igreja por ser "morna"?',opts:['Éfeso','Pérgamo','Sardes','Laodiceia'],correct:3,explain:'"Sei as tuas obras, que nem és frio nem quente. Assim, porque és morno, e não frio nem quente, estou a ponto de vomitar-te da minha boca."',ref:'Apocalipse 3:15-16'},
+  {type:'mc',q:'Qual é a diferença entre Saduceus e Fariseus no NT?',opts:['Somente o nome','Saduceus negavam a ressurreição; Fariseus a aceitavam','Saduceus eram mais rigorosos na lei','Fariseus eram sacerdotes'],correct:1,explain:'Os Saduceus (aristocracia sacerdotal) negavam a ressurreição, anjos e espíritos. Os Fariseus criam na ressurreição e na tradição oral.',ref:'Atos 23:8 / Marcos 12:18'},
+  {type:'mc',q:'Qual é o fruto do Espírito conforme Gálatas 5:22-23?',opts:['Amor, alegria, paz, paciência, bondade, benignidade, fidelidade, mansidão, domínio próprio','Fé, esperança, amor, humildade, paciência','Sabedoria, entendimento, ciência, piedade','Profecia, cura, línguas, interpretação'],correct:0,explain:'Gálatas 5:22-23 lista nove aspectos do fruto do Espírito: amor, alegria, paz, paciência, bondade, benignidade, fidelidade, mansidão e domínio próprio.',ref:'Gálatas 5:22-23'},
+  {type:'mc',q:'Qual profeta do AT é citado mais vezes no Novo Testamento?',opts:['Ezequiel','Jeremias','Moisés','Isaías'],correct:3,explain:'Isaías é citado ou aludido mais de 400 vezes no NT — mais do que qualquer outro profeta. Por isso é chamado de "o quinto evangelista".',ref:'Novo Testamento / Citações do AT'},
+  {type:'mc',q:'Qual é o tema central do livro de Eclesiastes?',opts:['A criação do mundo','A vaidade da vida sem Deus e a busca de sentido','A sabedoria do rei Salomão','O amor entre Salomão e a Sulamita'],correct:1,explain:'"Vaidade de vaidades, diz o Pregador, vaidade de vaidades! Tudo é vaidade." O Qohélet examina a vida "debaixo do sol" sem Deus e conclui: tema a Deus.',ref:'Eclesiastes 1:2 / 12:13'},
+  {type:'mc',q:'Em qual episódio Pedro andou sobre as águas?',opts:['Após a ressurreição','Na tempestade no mar da Galileia, durante a noite','Quando Jesus multiplicou os pães','No batismo de Jesus'],correct:1,explain:'Mateus 14:29-31 — Jesus andou sobre as águas na quarta vigília da noite. Pedro pediu para ir e afundou quando olhou para o vento. "Homem de pequena fé, por que duvidaste?"',ref:'Mateus 14:29-31'},
+  {type:'mc',q:'Quais são os três presentes trazidos pelos magos ao menino Jesus?',opts:['Ouro, prata e incenso','Ouro, incenso e mirra','Ouro, tempero e mirra','Prata, incenso e mirra'],correct:1,explain:'Mateus 2:11 — Os magos do Oriente ofereceram ouro (realeza), incenso (divindade) e mirra (morte/sepultamento). Cada presente era simbolicamente profético.',ref:'Mateus 2:11'},
+  {type:'mc',q:'Qual é o maior de todos os mandamentos segundo Jesus?',opts:['Não matarás','Honrar pai e mãe','Amar a Deus com todo o coração, alma e meod','Não mentirás'],correct:2,explain:'Jesus citou Deuteronômio 6:5: "Amarás ao Senhor teu Deus com todo o teu coração, com toda a tua alma e com todo o teu meod (força/intensidade)."',ref:'Marcos 12:30 / Deuteronômio 6:5'},
+  {type:'mc',q:'Qual o significado do nome "Jesus" em hebraico?',opts:['Filho de Davi','O Senhor salva','Deus conosco','O ungido'],correct:1,explain:'"Josué" (Yeshua) em hebraico = "o Senhor é salvação". O anjo disse a José: "Chamarás o seu nome Jesus, porque ele salvará o seu povo dos seus pecados."',ref:'Mateus 1:21'},
+  {type:'mc',q:'Qual evento marcou o início do ministério público de Jesus?',opts:['A Última Ceia','O batismo por João Batista','A cura do paralítico','A fuga para o Egito'],correct:1,explain:'O batismo de Jesus no Jordão marcou o início de seu ministério público, quando o Espírito Santo desceu e a voz do Pai O identificou publicamente.',ref:'Mateus 3:13-17'},
+  {type:'mc',q:'Qual cidade Paulo fundou durante sua segunda viagem missionária?',opts:['Tarso','Atenas','Filipos','Antioquia'],correct:2,explain:'Em Filipos, Paulo e Silas pregaram à beira do rio, converteram Lídia e foram presos. Mesmo na prisão cantaram hinos e um terremoto abriu as portas.',ref:'Atos 16:12-34'},
+  {type:'mc',q:'Qual é o maior capítulo da Bíblia?',opts:['Salmo 22','Salmo 119','Isaías 53','Gênesis 1'],correct:1,explain:'O Salmo 119 tem 176 versículos, divididos em 22 estrofes de 8 versículos cada, correspondendo às 22 letras do alfabeto hebraico.',ref:'Salmo 119'},
+  {type:'mc',q:'A frase "Eu sou o caminho, a verdade e a vida" é de qual Evangelho?',opts:['Mateus','Marcos','Lucas','João'],correct:3,explain:'João 14:6 — Jesus respondeu a Tomé com uma das mais profundas declarações "Eu sou" do quarto Evangelho, que contém sete dessas afirmações.',ref:'João 14:6'},
+  {type:'mc',q:'O que o jovem rico perguntou a Jesus para herdar a vida eterna?',opts:['Como orar corretamente','O que lhe faltava para ser perfeito','Qual é o maior mandamento','Se deve seguir a lei de Moisés'],correct:1,explain:'Jesus disse: "Vende tudo o que tens e dá-o aos pobres." O jovem foi embora triste porque possuía muitas riquezas. A riqueza era seu ídolo.',ref:'Mateus 19:20-22'},
+  {type:'mc',q:'Qual profeta do AT foi atirado num poço por seus companheiros por causa de suas profecias?',opts:['Isaías','Ezequiel','Jeremias','Daniel'],correct:2,explain:'Jeremias foi descido por cordas num poço de lama por pregar a rendição à Babilônia. Um etíope etrusco chamado Ebed-Melique o resgatou.',ref:'Jeremias 38:6-13'},
+  {type:'mc',q:'Qual é o tema central do livro de Rute?',opts:['A conquista de Canaã','A fidelidade e a redenção dentro da aliança','A sabedoria de Salomão','O retorno do cativeiro'],correct:1,explain:'Rute ilustra o chesed (amor fiel pactual) — de Rute com Noemi e de Boaz como \"go\'el\" (resgatador). É uma história de redenção e providência.',ref:'Rute 1:16 / 4:9-10'},
+  {type:'mc',q:'Qual profeta foi chamado por Deus quando criança, ouviu Sua voz de madrugada e disse "fala, pois o teu servo ouve"?',opts:['Jeremias','Isaías','Samuel','Ezequiel'],correct:2,explain:'No Tabernáculo, Samuel ouviu Deus chamá-lo três vezes. Pensou que era Eli. Na quarta vez, por instrução de Eli, respondeu: "Fala, pois o teu servo ouve."',ref:'1 Samuel 3:2-10'},
+  {type:'mc',q:'Qual versículo é frequentemente chamado de "o Evangelho em miniatura"?',opts:['Mateus 28:19','Romanos 8:28','João 3:16','Hebreus 11:1'],correct:2,explain:'"Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna."',ref:'João 3:16'},
+  {type:'mc',q:'Qual homem do NT ajudou José de Arimateia a preparar o corpo de Jesus?',opts:['Nicodemos','Zaqueu','Barnabé','Filipe'],correct:0,explain:'Nicodemos, que havia visitado Jesus de noite (Jo 3), trouxe mirra e aloés para preparar o corpo. Juntos com José de Arimateia, o sepultaram.',ref:'João 19:39-40'},
+  {type:'mc',q:'Qual é a declaração central de 1 Coríntios 15?',opts:['O amor é o maior dom','A ressurreição de Cristo é o fundamento da fé','A unidade do corpo de Cristo','O uso correto dos dons espirituais'],correct:1,explain:'"Se Cristo não ressuscitou, é vã a nossa pregação e vã também a vossa fé." A ressurreição corporal é o centro da teologia paulina.',ref:'1 Coríntios 15:14'},
+  {type:'mc',q:'Qual é o significado da palavra "Batismo" em grego?',opts:['Purificação','Imersão/mergulho','Unção','Consagração'],correct:1,explain:'"Baptizein" em grego significa mergulhar ou imergir. Os debates históricos sobre o modo do batismo (imersão, aspersão) giram em torno deste significado original.',ref:'Mateus 3:16 / Etimologia grega'},
+  {type:'mc',q:'Qual profeta do AT ministrou principalmente em Nínive, a capital da Assíria?',opts:['Jonas','Naum','Amós','Sofonias'],correct:0,explain:'Jonas foi enviado a Nínive para pregar o arrependimento. Naum também profetizou contra Nínive — mas um século depois, quando a cidade voltou ao mal.',ref:'Jonas 1:2 / Naum 1:1'},
+  {type:'mc',q:'Qual foi a resposta de Deus a Jó após todo seu sofrimento?',opts:['Ele explicou a razão do sofrimento','Ele revelou Sua grandeza e perguntou onde estava Jó na criação','Ele prometeu riquezas dobradas imediatamente','Ele pediu desculpas a Jó'],correct:1,explain:'Deus respondeu a Jó do meio do redemoinho com perguntas poderosas sobre a criação — não deu explicações, mas revelou Sua glória incomparável.',ref:'Jó 38:1-7'},
+  {type:'mc',q:'Qual era o ofício de Esdras em Israel?',opts:['Rei','Sacerdote e escriba versado na lei de Moisés','General do exército','Governador persa'],correct:1,explain:'"Esdras era um escriba versado na lei de Moisés... tinha disposto o seu coração a esquadrinhar a lei do Senhor, a cumpri-la e a ensinar os seus estatutos."',ref:'Esdras 7:6,10'},
+  {type:'mc',q:'A frase "O Senhor é meu pastor" está em qual salmo?',opts:['Salmo 1','Salmo 22','Salmo 23','Salmo 91'],correct:2,explain:'O Salmo 23, escrito por Davi, ex-pastor de ovelhas, começa com esta metáfora central do cuidado de Deus — um dos textos bíblicos mais memorados.',ref:'Salmo 23:1'},
+  {type:'mc',q:'Qual cidade foi destruída por enxofre e fogo por causa da perversidade de seus habitantes?',opts:['Nínive','Babilônia','Sodoma e Gomorra','Jericó'],correct:2,explain:'Gênesis 19 — Deus destruiu Sodoma e Gomorra com enxofre e fogo. Ló e suas filhas escaparam; a esposa olhou para trás e se tornou estátua de sal.',ref:'Gênesis 19:24-26'},
+  {type:'mc',q:'Qual carta do NT adverte contra o amor ao dinheiro, chamando-o de raiz de todos os males?',opts:['Tiago','Hebreus','1 Timóteo','1 Coríntios'],correct:2,explain:'"O amor ao dinheiro é a raiz de todos os males." (1 Tm 6:10). Nota: não é o dinheiro em si, mas o amor a ele que é perigoso.',ref:'1 Timóteo 6:10'},
+  {type:'mc',q:'Qual evento encerrou o período de 400 anos de silêncio profético antes de João Batista?',opts:['A vinda de Esdras do cativeiro','O nascimento de João Batista e o ministério de Zacarias','A construção do segundo templo','A aliança dos Macabeus'],correct:1,explain:'Após Malaquias (aprox. 430 a.C.), não houve profeta em Israel por cerca de 400 anos. João Batista encerrou esse silêncio como precursor do Messias.',ref:'Malaquias 4:5 / Lucas 1:11-17'},
+  {type:'mc',q:'Em qual rio foi batizado Jesus?',opts:['Nilo','Eufrates','Jordão','Quebar'],correct:2,explain:'João Batista batizava no rio Jordão, a leste de Jerusalém. Jesus foi a ele e foi batizado no Jordão, onde o Espírito desceu como pomba.',ref:'Mateus 3:13'},
+  {type:'mc',q:'Quantas viagens missionárias Paulo realizou relatadas no livro de Atos?',opts:['1','2','3','4'],correct:2,explain:'O livro de Atos registra três grandes viagens missionárias de Paulo antes de sua viagem final a Roma como prisioneiro.',ref:'Atos 13-14 / 15-18 / 18-21'},
+  {type:'mc',q:'Quem era o pai de João Batista?',opts:['José','Zacarias','Simão','Cleofas'],correct:1,explain:'Zacarias era sacerdote idoso da ordem de Abias. O anjo Gabriel anunciou que ele e Isabel teriam um filho chamado João, cheio do Espírito Santo.',ref:'Lucas 1:5-13'},
+  {type:'mc',q:'Qual é o significado do nome "Israel"?',opts:['Filho de Deus','Aquele que luta com Deus e prevalece','Povo escolhido','Terra santa'],correct:1,explain:'"Não te chamarás mais Jacó, mas Israel; porque lutaste com Deus e com os homens e prevaleceste." O nome marcou a transformação de Jacó.',ref:'Gênesis 32:28'},
+  {type:'mc',q:'Qual era a profissão de Lucas, autor do terceiro Evangelho?',opts:['Pescador','Médico','Cobrador de impostos','Carpinteiro'],correct:1,explain:'"Lucas, o médico amado" — Paulo o chama assim em Colossenses 4:14. Seu vocabulário técnico médico é evidente em seu Evangelho.',ref:'Colossenses 4:14'},
+  {type:'mc',q:'Qual livro bíblico contém o Cântico de Débora, um dos textos mais antigos da Bíblia?',opts:['Números','Josué','Juízes','Rute'],correct:2,explain:'Juízes 5 preserva o Cântico de Débora, celebrando a vitória sobre Sísara. É considerado um dos textos hebraicos mais antigos, com características poéticas arcaicas.',ref:'Juízes 5:1-31'},
+  {type:'mc',q:'Qual é o primeiro versículo da Bíblia?',opts:['"Toda Escritura é inspirada por Deus."','"No princípio era o Verbo."','"No princípio criou Deus os céus e a terra."','"O Senhor é meu pastor."'],correct:2,explain:'"No princípio criou Deus os céus e a terra" — Gênesis 1:1 é a abertura das Escrituras, estabelecendo Deus como Criador soberano de tudo.',ref:'Gênesis 1:1'},
+  {type:'mc',q:'Qual foi o pecado de Uzias que o fez ser atacado de lepra?',opts:['Idolatria','Usurpar o papel do sacerdote queimando incenso no templo','Aliança com a Assíria','Matar profetas'],correct:1,explain:'O rei Uzias, orgulhoso por seu poder, entrou no templo para queimar incenso — papel exclusivo dos sacerdotes. Deus o feriu com lepra imediatamente.',ref:'2 Crônicas 26:16-19'},
+  {type:'mc',q:'Qual é o livro mais longo do NT?',opts:['Mateus','João','Atos','Lucas'],correct:3,explain:'O Evangelho de Lucas é o maior livro do NT em extensão, seguido de perto pelo livro de Atos. Juntos formam a maior obra de um único autor no NT.',ref:'Evangelho de Lucas'},
+  {type:'mc',q:'Qual parábola Jesus contou para ilustrar quem é o próximo?',opts:['O Filho Pródigo','O Semeador','O Bom Samaritano','Os Talentos'],correct:2,explain:'Para responder "quem é o meu próximo?" Jesus narrou a história de um homem espancado, ignorado por sacerdote e levita, mas socorrido por um samaritano.',ref:'Lucas 10:30-37'},
+  {type:'mc',q:'Qual profeta disse "Cria em mim, ó Deus, um coração puro"?',opts:['Isaías','Salomão','Davi','Asafe'],correct:2,explain:'Salmo 51 é o salmo de arrependimento de Davi após ser confrontado por Natã sobre o pecado com Bate-Seba. "Cria em mim um coração puro, ó Deus" (v.10).',ref:'Salmo 51:10'},
+  {type:'mc',q:'Quantos livros o Novo Testamento possui?',opts:['25','27','29','30'],correct:1,explain:'O cânon do NT tem 27 livros: 4 Evangelhos, Atos, 13 epístolas paulinas, 8 epístolas gerais (Tiago a Judas) e Apocalipse.',ref:'Cânon NT'},
+],
+teologo:[
+  {type:'mc',q:'O termo hebraico "meod" (מְאֹד) em Deuteronômio 6:5 significa:',opts:['Alma (nefesh)','Coração (lebab)','Força extrema / intensidade máxima','Mente racional (biná)'],correct:2,explain:'"Meod" denota intensidade máxima. O Shema pede amor com lebab (coração/vontade), nefesh (alma/ser) e meod (força e intensidade total).',ref:'Deuteronômio 6:5'},
+  {type:'mc',q:'Qual concílio definiu o cânon de 27 livros do NT em 397 d.C.?',opts:['Niceia (325)','Calcedônia (451)','Terceiro Concílio de Cartago (397)','Éfeso (431)'],correct:2,explain:'O Terceiro Concílio de Cartago ratificou o cânon de 27 livros do NT. O Concílio de Hipona (393) havia feito lista similar.',ref:'Concílio de Cartago, 397 d.C.'},
+  {type:'mc',q:'O Documento Q (Quelle) na crítica sinótica é:',opts:['Cartas perdidas de Paulo','O Evangelho de Marcos em aramaico','Fonte hipotética com ditos de Jesus compartilhados por Mateus e Lucas','O Evangelho secreto de João'],correct:2,explain:'A teoria das duas fontes: Mateus e Lucas usaram Marcos + fonte "Q" (alemão Quelle = fonte), que conteria principalmente ditos de Jesus.',ref:'Teoria das Fontes Sinóticas'},
+  {type:'mc',q:'O que significa "kenose" na cristologia?',opts:['A ressurreição corporal de Cristo','A segunda vinda gloriosa','A dupla natureza de Cristo','O esvaziamento voluntário de prerrogativas divinas na encarnação'],correct:3,explain:'De Filipenses 2:7 — "esvaziou-se a si mesmo". A kenose descreve Cristo renunciando voluntariamente ao uso independente de atributos divinos ao encarnar-Se.',ref:'Filipenses 2:6-8'},
+  {type:'mc',q:'Qual heresia afirmava que a humanidade de Cristo era ilusória?',opts:['Arianismo','Nestorianismo','Docetismo','Pelagianismo'],correct:2,explain:'O Docetismo (gr. "dokein" = parecer) ensinava que Cristo apenas parecia humano. 1 João 4:2 é refutação direta.',ref:'1 João 4:2'},
+  {type:'mc',q:'Na teologia reformada, a justificação é:',opts:['Participação nos sacramentos','Sinônimo de santificação','Processo progressivo de se tornar justo','Declaração judicial de inocência baseada na justiça imputada de Cristo'],correct:3,explain:'Justificação é forense — Deus declara o pecador justo com base na justiça de Cristo imputada pela fé. É instantânea, não progressiva.',ref:'Romanos 3:21-26 / Lutero'},
+  {type:'mc',q:'O "chesed" (חֶסֶד) hebraico significa:',opts:['Amor leal e bondade pactual','Misericórdia emocional passageira','Perdão judicial','Graça comum'],correct:0,explain:'"Chesed" é amor fiel dentro de aliança — comprometimento leal que persiste mesmo quando a outra parte falha. É a característica mais constante do Deus do AT.',ref:'Êxodo 34:6 / Salmo 136'},
+  {type:'mc',q:'O argumento ontológico de Anselmo afirma:',opts:['O ser do qual nada maior pode ser concebido deve existir na realidade','A moral universal exige um Legislador divino','A experiência religiosa aponta para Deus','O cosmo exige uma primeira causa'],correct:0,explain:'"Deus é aquele do qual nada maior pode ser pensado." Se existisse só na mente, algo maior poderia ser concebido — contradição. Logo Deus existe necessariamente.',ref:'Proslogion, Anselmo (1078)'},
+  {type:'mc',q:'A "pericórese" trinitária descreve:',opts:['A criação ex nihilo','Dupla processão do Espírito Santo','Subordinação do Filho ao Pai','Interpenetração e coinherência mútua das três Pessoas divinas'],correct:3,explain:'Pericórese (João Damasceno) — cada Pessoa da Trindade habita plenamente nas outras sem se confundirem ou separarem. É a comunhão perfeita intratrinitária.',ref:'João Damasceno, séc. VIII'},
+  {type:'mc',q:'O Concílio de Niceia (325) usou qual termo para afirmar a divindade do Filho?',opts:['Heteroousios (de substância diferente)','Agennetos (não gerado)','Homoiousios (semelhante em substância)','Homoousios (de mesma substância)'],correct:3,explain:'"Homoousios" foi o termo-chave contra Ário. Niceia afirmou que o Filho é da mesma substância do Pai — plena divindade.',ref:'Concílio de Niceia, 325 d.C.'},
+  {type:'mc',q:'Qual livro bíblico não menciona o nome de Deus?',opts:['Rute','Cantares de Salomão','Ester','Jó'],correct:2,explain:'O livro de Ester não menciona "Deus" ou "Senhor" — omissão intencional que convida o leitor a reconhecer a providência divina oculta na história.',ref:'Livro de Ester'},
+  {type:'mc',q:'A Teologia da Libertação de Gustavo Gutiérrez usa qual paradigma central?',opts:['O Calvário como expiação individual','O Pentecostes','A criação ex nihilo','O Êxodo como libertação integral'],correct:3,explain:'Gutiérrez (Peru, 1971) usa o Êxodo como modelo de libertação política, social e espiritual, articulando a "opção preferencial pelos pobres".',ref:'Gutiérrez, "Teologia da Libertação" (1971)'},
+  {type:'mc',q:'O prólogo de João (Jo 1:1-18) tem qual propósito literário?',opts:['Narrar o nascimento de Jesus em Belém','Estabelecer a identidade cósmica de Jesus como Logos eterno','Apresentar João Batista como Messias','Resumir os sete sinais'],correct:1,explain:'O prólogo joanino — provavelmente hino cristológico — enquadra toda a narrativa: Jesus é o Logos eterno encarnado. É a chave hermenêutica do Evangelho.',ref:'João 1:1-18'},
+  {type:'mc',q:'A distinção luterana entre Lei e Evangelho serve para:',opts:['Explicar a predestinação','Provar que o AT foi abolido','Mostrar que a Lei condena; o Evangelho liberta pela graça','Defender os sacramentos'],correct:2,explain:'Para Lutero, a Lei revela o pecado e condena; o Evangelho anuncia a graça gratuita em Cristo. Distinção fundamental na hermenêutica reformadora.',ref:'Lutero / Confissão de Augsburgo (1530)'},
+  {type:'mc',q:'No grego do NT, "agape" difere de "eros" pois:',opts:['Não há diferença relevante','São sinônimos','Agape é incondicional e sacrificial; eros é desejante/romântico e ausente no NT','Agape é humano; eros é divino'],correct:2,explain:'"Agape" é amor volitivo, incondicional e sacrificial. "Eros" (amor desejante) não aparece no NT. Também existe "philia" (amor fraternal).',ref:'1 Coríntios 13 / João 3:16'},
+  {type:'mc',q:'A "sola scriptura" reformada significa:',opts:['A Escritura é autoridade suprema — norma que normatiza todas as demais normas','Somente o NT tem autoridade','A Bíblia só pode ser interpretada pelo magistério','Razão e tradição devem ser ignoradas'],correct:0,explain:'"Sola scriptura" = Escritura como "norma normans non normata". Razão e tradição são instrumentos legítimos, mas submetidos à autoridade final da Escritura.',ref:'Reforma Protestante / Westminster I.2'},
+  {type:'mc',q:'O debate entre amilenismo e premilenismo trata de:',opts:['Se Jesus voltará visivelmente','Se haverá juízo final','Se o AT tem validade','Se os "1000 anos" do Ap 20 são reinado espiritual presente ou reino literal futuro'],correct:3,explain:'Amilenismo: os 1000 anos = reinado espiritual de Cristo na era da Igreja. Premilenismo: Cristo voltará antes de um reino literal de 1000 anos na terra.',ref:'Apocalipse 20:1-6'},
+  {type:'mc',q:'A "dupla predestinação" calvinista afirma:',opts:['Deus predestina uns à salvação e outros à condenação para Sua glória','Somente os salvos são predestinados','É igual à doutrina armínia','Deus apenas prevê as escolhas humanas'],correct:0,explain:'Calvino e o Sínodo de Dort ensinaram que Deus soberanamente elege uns à salvação e repruva outros para condenação. Posição controversa mesmo dentro do calvinismo.',ref:'Calvino, Institutos III.21 / Sínodo de Dort (1619)'},
+  {type:'mc',q:'A exegese histórico-gramatical busca:',opts:['O sentido pretendido pelo autor original em seu contexto histórico','Alegorizar o texto','Tipologia mediada','Eisegese do intérprete'],correct:0,explain:'A exegese histórico-gramatical busca o sentido original que o autor humano pretendia, considerando gramática, contexto e gênero literário.',ref:'Hermenêutica Bíblica'},
+  {type:'mc',q:'O que distingue tipologia de alegoria na hermenêutica?',opts:['Tipologia vê padrões históricos reais prefigurando Cristo; alegoria impõe significados sem âncora histórica','Alegoria é mais fiel ao texto','Tipologia é só do NT','São idênticas'],correct:0,explain:'Tipologia: eventos históricos reais do AT (Adão, cordeiro pascal) prefiguram Cristo. Alegoria: significados espirituais sem base histórica necessária.',ref:'Romanos 5:14 / Hermenêutica'},
+  {type:'mc',q:'A "Nova Perspectiva sobre Paulo" de N.T. Wright afirma que:',opts:['Paulo pregava salvação puramente individual','Romanos trata da fidelidade pactual de Deus e da redefinição do povo em Cristo','Paulo rejeitava o AT','A justificação é progressiva'],correct:1,explain:'Wright argumenta que "justiça de Deus" em Romanos = fidelidade à aliança. A "justificação" não é só experiência individual, mas declaração de quem pertence ao povo de Deus.',ref:'N.T. Wright, "What Saint Paul Really Said" (1997)'},
+  {type:'mc',q:'A "analogia fidei" hermenêutica significa:',opts:['Cada livro bíblico é independente','O AT contradiz o NT','A Bíblia é interpretada pelo magistério papal','Passagens obscuras devem ser interpretadas à luz das claras da própria Escritura'],correct:3,explain:'"Analogia fidei" — a Escritura interpreta a Escritura. Textos obscuros são iluminados por textos claros dentro da unidade da Revelação divina.',ref:'Confissão de Westminster I.9'},
+  {type:'mc',q:'Os Massoretas adicionaram ao hebraico bíblico:',opts:['Os sinais vocálicos (nekudot) para preservar a pronúncia','Os capítulos e versículos','A pontuação grega','Os consonantes originais'],correct:0,explain:'Os Massoretas (séc. 6-10 d.C.) adicionaram os nekudot (pontos vocálicos) ao texto consonantal para preservar a tradição oral de leitura sinagogal.',ref:'Tradição Massorética'},
+  {type:'mc',q:'A distinção entre justificação e santificação é:',opts:['Santificação precede a justificação','Justificação é progressiva','São sinônimos','Justificação é posicional e instantânea; santificação é progressiva e contínua'],correct:3,explain:'Justificação: declaração judicial de justo, instantânea, baseada em Cristo. Santificação: processo progressivo de transformação pelo Espírito Santo.',ref:'Romanos 3:21-26 / 2 Coríntios 3:18'},
+  {type:'mc',q:'O Teísmo Aberto (Open Theism) propõe:',opts:['Deus predestina tudo incondicionalmente','Deus limitou voluntariamente Seu conhecimento do futuro para preservar a liberdade humana','Salvação depende só das escolhas humanas','O futuro é determinado pela presciência divina'],correct:1,explain:'Pinnock e Boyd propõem que Deus voluntariamente limitou Seu conhecimento do futuro livre para que a liberdade humana seja genuína. Posição controversa.',ref:'Pinnock, "The Openness of God" (1994)'},
+  {type:'mc',q:'"Logos" no prólogo de João significa além de "Palavra":',opts:['Apenas comunicação verbal','Razão divina criativa — combina o dabar hebraico com o logos estoico','Nome pessoal do Pai','Um anjo mensageiro'],correct:1,explain:'João funde o "dabar" hebraico (palavra ativa de Deus na história) com o "logos" grego estoico (razão ordenadora). Cristo é a Razão divina encarnada.',ref:'João 1:1-3,14'},
+  {type:'mc',q:'A "imago Dei" tem três dimensões clássicas. Qual NÃO é uma delas?',opts:['Substantiva (capacidades racionais e morais)','Funcional (mordomia sobre a criação)','Relacional (comunhão com Deus)','Sacramental (mediação de graça)'],correct:3,explain:'As três dimensões: substantiva, funcional e relacional. "Sacramental" não é categoria padrão da imago Dei na teologia sistemática.',ref:'Gênesis 1:26-28'},
+  {type:'mc',q:'A heresia pelagiana condenada em 418 d.C. afirmava:',opts:['O Espírito procede só do Pai','Cristo tinha só natureza divina','O ser humano pode alcançar salvação pela força da própria vontade, sem graça especial','O Filho é subordinado ao Pai'],correct:2,explain:'Pelágio: o ser humano nasce neutro e pode obedecer a Deus pela própria força moral. Agostinho refutou: a graça de Deus é necessária e precedente.',ref:'Concílio de Cartago, 418 d.C. / Agostinho'},
+  {type:'mc',q:'O molinismo de Luís de Molina propõe:',opts:['Salvação depende só de escolhas humanas','O futuro é totalmente aberto','Predestinação incondicional','Deus usa scientia media — conhecimento de como livres-arbítrios responderiam em qualquer circunstância'],correct:3,explain:'Molina propôs "scientia media" — Deus ordena a criação usando Seu conhecimento de contrafactuais de liberdade, compatibilizando soberania e liberdade.',ref:'Luís de Molina, "Concordia" (1588)'},
+  {type:'mc',q:'O argumento central de Paulo pela ressurreição em 1 Coríntios 15:',opts:['A ressurreição foi só espiritual','Os discípulos inventaram a história','O túmulo vazio confirmado pelos romanos','Se Cristo não ressuscitou, a fé é vã e os mortos em Cristo pereceram'],correct:3,explain:'"Se Cristo não ressuscitou, é vã a nossa pregação e vã a vossa fé." A ressurreição corporal histórica é o fundamento inegociável do Evangelho.',ref:'1 Coríntios 15:14-19'},
+  {type:'mc',q:'Qual concílio condenou o Nestorianismo e confirmou Maria como Theotokos?',opts:['Niceia (325)','Calcedônia (451)','Éfeso (431)','Cartago (397)'],correct:2,explain:'O Concílio de Éfeso (431) condenou Nestório e afirmou que Maria é "Theotokos" (Mãe de Deus), porque Jesus é uma única pessoa divina-humana.',ref:'Concílio de Éfeso, 431 d.C.'},
+  {type:'mc',q:'O "sola fide" reformado afirma:',opts:['Somente pela graça o pecador é salvo','Somente Cristo é mediador','Somente a Bíblia é autoridade','Somente pela fé o pecador é justificado, sem obras meritórias'],correct:3,explain:'"Sola fide" — somente pela fé — é o artigo pelo qual a Igreja fica de pé ou cai (Lutero). Romanos 3:28: "o homem é justificado pela fé sem as obras da lei."',ref:'Romanos 3:28 / Lutero'},
+  {type:'mc',q:'O argumento cosmológico de Tomás de Aquino parte de:',opts:['Todo efeito tem causa; não há regressão infinita; logo há uma Causa Primeira','A consciência moral','O design do universo','A beleza da criação'],correct:0,explain:'"Primeira Via": tudo tem uma causa, a série não pode ser infinita, logo deve haver uma Causa Primeira não causada = Deus.',ref:'Suma Teológica, Tomás de Aquino (1274)'},
+  {type:'mc',q:'A "soteriologia" é o ramo da teologia que estuda:',opts:['A natureza de Deus (Trindade)','A doutrina da salvação','A criação e providência divina','As últimas coisas (escatologia)'],correct:1,explain:'Soteriologia (gr. "soteria" = salvação) estuda todos os aspectos da salvação: eleição, regeneração, fé, justificação, santificação e glorificação.',ref:'Teologia Sistemática'},
+
+  {type:'mc',q:'O que é a "Septuaginta" (LXX)?',opts:['Tradução grega do AT feita por 70 (ou 72) estudiosos em Alexandria','A tradução latina da Bíblia por Jerônimo','O texto aramaico do NT','O texto hebraico Massorético'],correct:0,explain:'A LXX (Septuaginta) foi traduzida em Alexandria entre sécs. III-II a.C. por estudiosos judeus. É o AT usado pelos autores do NT e pela Igreja primitiva.',ref:'Carta de Aristeas / séc. III a.C.'},
+  {type:'mc',q:'O "filioque" (E do Filho) na doutrina trinitária foi:',opts:['Inserido unilateralmente pelo Ocidente no Credo de Niceno-Constantinopolitano, gerando o Cisma de 1054','Rejeitado por Agostinho','Proposto pelo Concílio de Calcedônia','Acrescentado ao Credo de Niceia pelo Concílio de Éfeso'],correct:0,explain:'O filioque ("que procede do Pai E do Filho") foi adicionado pelo Ocidente. O Oriente defendia que o Espírito procede só do Pai. Foi um dos pivôs do Grande Cisma de 1054.',ref:'Cisma do Oriente e Ocidente, 1054'},
+  {type:'mc',q:'O que distingue a "inspiração plenária verbal" da "inspiração conceitual"?',opts:['Plenária verbal: as palavras mesmas foram inspiradas; conceitual: apenas as ideias','Plenária verbal é mais liberal','Conceitual admite erros nos conceitos','São idênticas'],correct:0,explain:'Inspiração plenária verbal sustenta que o próprio texto das Escrituras é divinamente inspirado, não apenas os conceitos ou intenções dos autores.',ref:'2 Timóteo 3:16-17 / Teologia Bíblica'},
+  {type:'mc',q:'A "doutrina da Trindade econômica versus imanente" refere-se a:',opts:['Trindade na história da salvação vs. Trindade em si mesma na eternidade','Divisão de funções econômicas','Diferença entre AT e NT','Posições de Ariano vs. Niceia'],correct:0,explain:'Trindade econômica = como as três Pessoas operam na história da salvação. Trindade imanente (ontológica) = o ser intratrinitário eterno. Karl Rahner: "a Trindade econômica É a Trindade imanente."',ref:'Karl Rahner / Teologia Sistemática'},
+  {type:'mc',q:'O que é "eisegese" em hermenêutica?',opts:['Leitura contextual','Trazer significados externos para o texto em vez de extrair o sentido do texto','Estudo das formas literárias','Análise dos manuscritos'],correct:1,explain:'Eisegese = ler para dentro (eis = para dentro em grego) — impor ao texto um significado pré-determinado. O oposto de exegese (ler para fora = extrair o sentido original).',ref:'Hermenêutica Bíblica'},
+  {type:'mc',q:'Qual é a diferença entre "apócrifos" e "pseudoepígrafos"?',opts:['Apócrifos são livros de autoria questionável; pseudoepígrafos têm autoria falsamente atribuída','Apócrifos são mais antigos','Pseudoepígrafos são apenas gregos','São sinônimos'],correct:0,explain:'Apócrifos: livros de canonicidade debatida. Pseudoepígrafos: textos atribuídos a personagens bíblicos (Enoque, Moisés) mas escritos muito depois — autoria falsa.',ref:'Cânon Bíblico / Literatura Intertestamentária'},
+  {type:'mc',q:'O "Sitz im Leben" (situação na vida) na crítica das formas refere-se a:',opts:['O contexto geográfico','O contexto social e religioso original em que uma tradição oral nasceu','A data de composição','O autor original'],correct:1,explain:'Hermann Gunkel desenvolveu o conceito: cada perícope bíblica nasce de uma situação concreta (culto, lei, sabedoria). Entender o Sitz im Leben é chave para a crítica das formas.',ref:'Hermann Gunkel / Crítica das Formas'},
+  {type:'mc',q:'O "Sacramento da Eucaristia" gerou debate entre Lutero (consubstanciação) e Zuínglio porque:',opts:['Discordavam sobre quem podia presidir','Lutero: Cristo está real mas não fisicamente no pão; Zuínglio: é simbólico e memorial','Lutero queria abolir a Eucaristia','Zuínglio defendia a transubstanciação'],correct:1,explain:'Na Colóquio de Marburgo (1529), Lutero defendeu a presença real de Cristo "em, com e sob" os elementos (consubstanciação). Zuínglio defendia que é memorial simbólico.',ref:'Colóquio de Marburgo, 1529'},
+  {type:'mc',q:'A distinção entre "teologia natural" e "teologia revelada" é:',opts:['Natural é superior','Revelada não precisa de razão','São opostas e excludentes','Natural: conhecimento de Deus pela razão e criação; Revelada: conhecimento pela Escritura e Cristo'],correct:3,explain:'Teologia natural (Romanos 1:19-20) é o conhecimento de Deus acessível pela razão e criação. Teologia revelada depende da revelação especial nas Escrituras e em Cristo.',ref:'Romanos 1:19-20 / Tomás de Aquino'},
+  {type:'mc',q:'O que é o "princípio da analogia" na historiografia bíblica de Ernst Troeltsch?',opts:['Eventos históricos únicos podem ser compreendidos pela analogia com eventos conhecidos — implica que milagres devem ser rejeitados','A Bíblia usa muitas analogias','Método de leitura tipológica','O passado é incompreensível'],correct:0,explain:'Troeltsch: tudo no passado deve ser compreendido por analogia com o presente. Isso levaria a excluir milagres. Teólogos conservadores rejeitam esta premissa naturalista.',ref:'Ernst Troeltsch / Método Histórico-Crítico'},
+  {type:'mc',q:'O que é o "consenso de Lausanne" (1974)?',opts:['Documento sobre a Trindade','Resposta ao Vaticano II','Acordo sobre batismo','Declaração evangélica sobre missão mundial, evangelismo e responsabilidade social'],correct:3,explain:'O Pacto de Lausanne (1974), liderado por Billy Graham e John Stott, definiu a missão integral evangelizando e engajando as necessidades sociais.',ref:'Pacto de Lausanne, 1974'},
+  {type:'mc',q:'A "terceira busca pelo Jesus histórico" (Third Quest) se distingue por:',opts:['Focar apenas nos milagres de Jesus','Aceitar todos os evangelhos apócrifos','Rejeitar completamente o NT','Colocar Jesus firmamente no contexto do judaísmo do século I como profeta escatológico'],correct:3,explain:'A Terceira Busca (Sanders, Meier, Wright) situa Jesus no judaísmo do século I como pregador escatológico do Reino — um avanço sobre as buscas anteriores.',ref:'E.P. Sanders, N.T. Wright / Terceira Busca'},
+  {type:'mc',q:'Qual é a posição da "teologia do processo" (Whitehead/Cobb)?',opts:['Deus criou o mundo do nada','A Trindade é a base da criação','Deus é imutável e onipotente','Deus é dipolar — persuade mas não controla; sofre com o mundo e é afetado pela história'],correct:3,explain:'A teologia do processo (baseada em Whitehead) propõe um Deus que não é onipotente, mas persuasivo. Deus é afetado pela criação e evolui com ela.',ref:'Whitehead, Process and Reality / Cobb'},
+  {type:'mc',q:'O que é o "Canon within the Canon" (cânon dentro do cânon)?',opts:['O AT dentro do NT','A prática de privilegiar certos textos bíblicos como critério de interpretação dos demais','Os livros apócrifos dentro do cânon','O Pentateuco como base do NT'],correct:1,explain:'Lutero privilegiava Romanos e Gálatas. Críticos modernos usam o "cânon interno" metodologicamente. A questão é se isso compromete a autoridade de toda a Escritura.',ref:'Lutero / Hermenêutica Crítica'},
+  {type:'mc',q:'A "cristologia de baixo" difere da "cristologia de cima" porque:',opts:['São idênticas','De cima é herética','De baixo nega a divindade; de cima afirma','De baixo parte da humanidade histórica de Jesus chegando à sua divindade; de cima parte da preexistência divina'],correct:3,explain:'"De baixo": começa com Jesus histórico e pergunta como Ele é divino. "De cima": começa com o Logos preexistente que se encarna. João 1 é a cristologia "de cima" por excelência.',ref:'Rahner, Pannenberg, Schillebeeckx / Cristologia'},
+  {type:'mc',q:'O "Sínodo de Dort" (1618-1619) definiu os cinco pontos do calvinismo. Qual é o acrônimo em inglês?',opts:['GRACE','TULIP','FAITH','CALVN'],correct:1,explain:'TULIP: Total depravity, Unconditional election, Limited atonement, Irresistible grace, Perseverance of saints. Os cinco pontos em resposta aos Remonstrantes arminianos.',ref:'Sínodo de Dort, 1618-1619'},
+  {type:'mc',q:'O que é a "recapitulação" na teologia de Ireneu de Lião?',opts:['A repetição do batismo','Cristo recapitula (resume e restaura) toda a humanidade em Si mesmo, desfazendo o que Adão fez','A releitura do AT','A renovação da aliança'],correct:1,explain:'Ireneu: assim como Adão foi cabeça da humanidade caída, Cristo é a nova cabeça que recapitula (anakephalaiosis) toda a história humana, restaurando o que foi perdido.',ref:'Ireneu, Adversus Haereses / séc. II'},
+  {type:'mc',q:'O que distingue a "expiação penal substitutiva" da "teoria moral da expiação"?',opts:['São idênticas','Penal substitutiva: Cristo pagou a pena pelo pecado no lugar dos culpados; moral: a cruz nos influencia moralmente','Penal é protestante; moral é católica','Moral inclui ressurreição; penal não'],correct:1,explain:'Penal substitutiva (Anselmo, Reforma): Cristo satisfez a justiça divina sofrendo a pena pelo pecado humano. Teoria Moral (Abelardo): a cruz é exemplo de amor que nos transforma.',ref:'Anselmo, Cur Deus Homo / Abelardo'},
+  {type:'mc',q:'O "Documento de Uppsala" (CMI, 1968) é associado a qual mudança?',opts:['Fundação da aliança evangélica','Defesa da inerrância bíblica','Reorientação do ecumenismo para evangelização social e política','Promulgação do Vaticano II'],correct:2,explain:'A Assembleia de Uppsala do Conselho Mundial de Igrejas marcou uma virada para questões políticas e sociais, gerando reação evangelica que culminou em Lausanne.',ref:'CMI Uppsala, 1968'},
+  {type:'mc',q:'A "perspectiva da aliança" (covenant theology) interpreta a Bíblia principalmente por:',opts:['Os sete dias da criação','Duas alianças: obras (Adão) e graça (Cristo), com um único povo de Deus do AT ao NT','Os três ofícios de Cristo','A lei cerimonial'],correct:1,explain:'A teologia da aliança vê a história redentora como continuidade: aliança de obras (Adão), aliança de graça (Cristo). Contrasta com o dispensacionalismo, que divide a história.',ref:'Westminster Confession / Teologia da Aliança'},
+  {type:'mc',q:'Qual é a diferença entre "cessacionismo" e "continuacionismo"?',opts:['Cessacionismo é pentecostal','Continuacionismo rejeita a Bíblia','São idênticos','Cessacionismo: dons milagrosos cessaram com o cânon; continuacionismo: todos os dons continuam na era da Igreja'],correct:3,explain:'Cessacionismo (B.B. Warfield): os dons de sinais (línguas, cura) cessaram com o fechamento do cânon. Continuacionismo: todos os dons continuam enquanto a Igreja existe.',ref:'1 Coríntios 12-14 / Warfield'},
+  {type:'mc',q:'O que é a "exegese canônica" de Brevard Childs?',opts:['Usar apenas o cânon protestante','Rejeitar a crítica histórica','Ignorar o contexto histórico','Interpretar cada texto em relação ao cânon completo, em vez de isolar perícopes'],correct:3,explain:'Childs propõe que o significado teológico de um texto emerge de seu lugar no cânon final, não apenas de sua origem histórica. Uma reação à hipercrítica histórica.',ref:'Brevard Childs, Introduction to the OT as Scripture'},
+  {type:'mc',q:'O "extra Calvinisticum" afirma que:',opts:['A graça é irresistível','Calvino era mais extremo que Lutero na predestinação','O Logos, mesmo encarnado, continua sustentando o universo — não estava inteiramente "contido" em Jesus','Cristo não é divino'],correct:2,explain:'Os luteranos criticavam: o Logos era totalmente contido na humanidade de Jesus. Calvino: o Filho encarnado também está fora (extra) da carne sustentando o cosmos.',ref:'João 1:3 / Calvino, Institutos II.13.4'},
+  {type:'mc',q:'O que é "theopneustos" em 2 Timóteo 3:16?',opts:['Título de um bispo','Referência ao Espírito Santo','Nome grego de Deus','Literalmente "soprado por Deus" — a palavra grega para inspirada'],correct:3,explain:'"Theopneustos" (θεόπνευστος) = theos (Deus) + pneō (soprar). "Toda Escritura é inspirada por Deus" — literalmente "soprada por Deus". Base da doutrina da inspiração.',ref:'2 Timóteo 3:16'},
+  {type:'mc',q:'A "Confissão de Westminster" (1646) é o documento fundante de qual tradição?',opts:['Luterana','Anglicana','Presbiteriana/Reformada','Batista'],correct:2,explain:'A Confissão de Westminster (1646) é o símbolo doutrinal central do presbiterianismo e de muitas igrejas reformadas, cobrindo toda a teologia sistemática.',ref:'Confissão de Westminster, 1646'},
+  {type:'mc',q:'O que é o "círculo hermenêutico"?',opts:['Método de leitura em grupo','O uso de concordâncias','Leitura circular sem saída','A interdependência entre texto e intérprete: compreender o todo exige entender as partes e vice-versa'],correct:3,explain:'Schleiermacher e Dilthey: para entender o todo (Bíblia) é preciso entender as partes; para entender as partes é preciso o todo. A compreensão avança em espiral.',ref:'Schleiermacher / Hermenêutica Filosófica'},
+  {type:'mc',q:'A "doutrina da impassibilidade divina" afirma que:',opts:['Deus mudou Sua natureza na encarnação','Deus não se importa com o sofrimento humano','Deus não é afetado por emoções ou sofrimento externo — é imutável em Sua perfeição','Deus sofre com a criação'],correct:2,explain:'A impassibilidade divina (doutrina clássica) afirma que Deus não está sujeito a sofrimento ou paixão como criaturas. Teólogos modernos como Moltmann questionam esta posição.',ref:'Teologia Clássica / Moltmann, O Deus Crucificado'},
+  {type:'mc',q:'Qual é a tese central da "teologia da cruz" (theologia crucis) de Lutero?',opts:['A lei é mais importante que o Evangelho','O batismo é a única forma de graça','A glória é o centro da teologia','Deus se revela paradoxalmente no sofrimento e fraqueza da cruz, não na glória e poder'],correct:3,explain:'Lutero contra a "theologia gloriae": Deus não é conhecido pela glória, sabedoria e poder, mas sub contrario — sub cruce, no oposto: fraqueza, sofrimento, cruz.',ref:'Lutero, Heidelberger Disputation (1518)'},
+  {type:'mc',q:'A "batalha de Armagedão" em Apocalipse 16 é entendida de quantas formas principais?',opts:['Apenas uma (literal)','Duas: literal (batalha terrena futura) e simbólica (conflito espiritual da história)','Três: pré-milenista literal, amilenar simbólico, pós-milenista gradual','Quatro variações'],correct:2,explain:'As principais leituras: (1) Premilenismo: batalha literal futura em Meggido. (2) Amilenismo: símbolo do conflito cósmico final. (3) Pós-milenismo: derrota gradual do mal.',ref:'Apocalipse 16:16 / Escatologia'},
+  {type:'mc',q:'O que é "cessio bonorum" no contexto da teologia da justificação?',opts:['Cessão da justiça de Cristo ao crente e do pecado do crente a Cristo — a "grande troca"','Distribuição de bens na Igreja primitiva','Renúncia ao mundo antes do batismo','Abandono de bens materiais para a salvação'],correct:0,explain:'A "grande troca" ou "communicatio idiomatum salvífico": Cristo tomou o pecado do crente; ao crente é imputada a justiça perfeita de Cristo. Base da justificação forense.',ref:'2 Coríntios 5:21 / Lutero'},
+  {type:'mc',q:'O conceito de "missio Dei" (missão de Deus) é atribuído principalmente a:',opts:['Karl Barth e depois desenvolvido por Georg Vicedom','Lutero','Calvino','Billy Graham'],correct:0,explain:'"Missio Dei": a missão não é da Igreja — é de Deus, e a Igreja é convidada a participar da missão que o Pai, Filho e Espírito já estão realizando. Barth elaborou, Vicedom popularizou.',ref:'Karl Barth / Georg Vicedom, Missio Dei (1958)'},
+  {type:'mc',q:'O que é o "argumento do design" (teleológico) para a existência de Deus?',opts:['A ordem e o design no universo apontam para um Designer inteligente','A consciência moral exige um Legislador','A experiência religiosa é universal','A existência de Deus é provada pela necessidade de uma Causa Primeira'],correct:0,explain:'O argumento teleológico (Paley, a analogia do relógio) e seu análogo moderno — o argumento do Design Inteligente — argumentam que a complexidade implica um Designer.',ref:'Tomás de Aquino, 5ª Via / William Paley'},
+  {type:'mc',q:'A "Lei dos Três Usos" (triplex usus legis) na Reforma inclui:',opts:['Uso político, pedagógico e normativo','Uso cerimonial, moral e civil','Lei antiga, nova e eterna','Lei escrita, oral e espiritual'],correct:0,explain:'(1) Uso civil/político: restringe o pecado na sociedade. (2) Uso pedagógico/teológico: revela o pecado e leva a Cristo. (3) Uso normativo: guia o crente regenerado. Calvino enfatizou o 3º.',ref:'Calvino, Institutos II.7 / Melanchthon'},
+  {type:'mc',q:'O que é o "Logos spermatikos" nos apologistas do século II?',opts:['A Torá como Palavra de Deus','O Verbo que gerou o universo fisicamente','A semente do Logos divino presente em toda a razão humana, permitindo alguma verdade fora do cristianismo','O Filho antes da encarnação'],correct:2,explain:'Justino Mártir: o Logos divino semeou (sperma) sua razão em todo ser humano. Filósofos como Sócrates participaram do Logos. Base para o diálogo entre fé e razão.',ref:'Justino Mártir, Apologia I / séc. II'},
+  {type:'mc',q:'Qual é o tema central da carta aos Hebreus?',opts:['O papel dos dons espirituais','A justificação pela fé','A segunda vinda de Cristo','A superioridade de Cristo sobre toda a aliança mosaica: sacerdócio, sacrifício e Templo'],correct:3,explain:'Hebreus argumenta metodicamente que Cristo é superior a anjos, Moisés, Josué, Arão — Seu sacerdócio é melhor, Seu sacrifício é final, Sua aliança é nova e perfeita.',ref:'Hebreus 1:1-4 / 10:1-10'},
+  {type:'mc',q:'O "credo de Atanásio" (Quicumque Vult) é especialmente importante por:',opts:['Condenar o Islã','Ser o credo mais curto','Formular com precisão a doutrina da Trindade e a dupla natureza de Cristo de forma ortodoxa','Ser o primeiro credo do NT'],correct:2,explain:'O Athanasian Creed formula detalhadamente a Trindade: "nem confundindo as pessoas, nem dividindo a substância" e a dualidade de Cristo — completamente divino e humano.',ref:'Credo de Atanásio / séc. V'},
+  {type:'mc',q:'A "hermenêutica suspeita" de Paul Ricoeur e outros afirma:',opts:['A Bíblia deve ser rejeitada','Todo texto pode esconder interesses de poder ou distorções inconscientes que o leitor deve questionar','A hermenêutica é impossível','Somente a tradição importa'],correct:1,explain:'Ricoeur, seguindo Freud, Marx e Nietzsche — "mestres da suspeita" — propõe ler textos questionando interesses ocultos. Importante para teologias da libertação e feminista.',ref:'Paul Ricoeur, De l\'interprétation / 1965'},
+  {type:'mc',q:'O que é o "princípio de Sola Gratia" na soteriologia reformada?',opts:['Sola Gratia é idêntico ao Sola Fide','A graça é um dos fatores da salvação','A salvação é inteiramente pela graça de Deus, sem contribuição meritória humana','Graça e obras cooperam igualmente'],correct:2,explain:'"Sola Gratia" — somente pela graça. Deus não salva por méritos humanos, mas por pura graça. É diferente de Sola Fide: graça é a causa; fé é o instrumento receptor.',ref:'Efésios 2:8-9 / Confissão de Augsburgo'},
+  {type:'mc',q:'A "Teologia da Missão Integral" de René Padilla propõe:',opts:['Somente evangelismo verbal','A missão abrange proclamação do Evangelho e transformação social como dimensões inseparáveis','A política deve liderar a Igreja','Abandono das missões tradicionais'],correct:1,explain:'Padilla (IFES) cunhou "misión integral" em Lausanne (1974): proclamação e demonstração do Evangelho são inseparáveis — a missão da Igreja envolve toda a realidade humana.',ref:'René Padilla, "Misión Integral" / Lausanne 1974'},
+  {type:'mc',q:'Qual é a estrutura do argumento de Anselmo no "Cur Deus Homo"?',opts:['Deus quis humilhar-se livremente','O pecado infinitamente ofende a honra divina; apenas um ser infinito pode reparar; logo Deus se faz homem para oferecer satisfação','Deus sacrificou Cristo para aplacar Sua ira','A expiação é moral e exemplo'],correct:1,explain:'Anselmo (séc. XI): a ofensa ao infinito Deus exige satisfação infinita. Humanos finitos não podem dar. Somente Deus-homem pode: daí a necessidade da encarnação e morte.',ref:'Anselmo, Cur Deus Homo (1098)'},
+  {type:'mc',q:'O "semipelagianismo" se distingue do pelagianismo porque:',opts:['Pelagianos aceitam a graça preveniente','São idênticos','Semipelagianos admitem que a graça é necessária mas afirmam que a iniciativa (início da fé) pode vir do ser humano','Semipelagianos rejeitam a Bíblia'],correct:2,explain:'Pelagianos: o ser humano pode se salvar sem graça. Semipelagianos: a graça é necessária, mas o ser humano pode dar o primeiro passo. Condenado no Concílio de Orange (529 d.C.).',ref:'Concílio de Orange, 529 d.C.'},
+  {type:'mc',q:'O que a expressão grega "eschaton" significa em teologia?',opts:['Primeiro princípio','A coisa final, o fim dos tempos','Julgamento parcial','O Messias'],correct:1,explain:'"Eschaton" (ἔσχατον) = o último, o fim. Escatologia (logos + eschaton) é o estudo das coisas últimas: morte, ressurreição, julgamento, eternidade.',ref:'Mateus 24:3 / Teologia Sistemática'},
+  {type:'mc',q:'O que é o "duplo efeito" na ética teológica de Tomás de Aquino?',opts:['Uma ação pode ter dois efeitos — um bom e um mau — sendo lícita se o efeito bom é intencionado e o mau é tolerado, não desejado','Dois tipos de lei: natural e positiva','O duplo mandamento de amor','Dois fins igualmente válidos para qualquer ato'],correct:0,explain:'O princípio do duplo efeito: uma ação com dois efeitos (ex: cirurgia que salva mas pode causar dor) é moral se (1) o ato em si é bom, (2) o efeito bom não é causado pelo mau.',ref:'Tomás de Aquino, Suma Teológica II-II'},
+  {type:'mc',q:'Qual é o argumento de C.S. Lewis no "Trilemma" (Lorde, Louco ou Mentiroso)?',opts:['Jesus foi apenas um grande mestre moral','Jesus afirmou ser Deus; ou era o que disse (Senhor), ou estava mentindo ou era louco — não pode ser apenas bom mestre','A divindade de Jesus é irrelevante','Os evangelhos são mitologia'],correct:1,explain:'C.S. Lewis em "Mere Christianity": Jesus afirmou ser Deus. Ou Ele é Senhor (verdade), ou era Louco (errado sobre si), ou era Mentiroso (consciente). A neutralidade é impossível.',ref:'C.S. Lewis, Mere Christianity (1952)'},
+  {type:'mc',q:'O que é o "paradoxo da onipotência" na filosofia da religião?',opts:['Deus pode criar o impossível','Pode Deus criar uma pedra que Ele mesmo não consiga levantar? — questiona se a onipotência é autocontraditória','Deus não é onipotente','A onipotência divina exclui o livre-arbítrio'],correct:1,explain:'O paradoxo da pedra: se Deus pode fazer tudo, pode criar pedra que Ele não levanta? Respostas: onipotência não inclui o logicamente impossível; Deus escolheu autolimitação.',ref:'Filosofia da Religião / Tomás de Aquino'},
+  {type:'mc',q:'A teologia de Karl Barth é caracterizada como "neoortodoxa" porque:',opts:['Retorna ao catolicismo romano','Retoma categorias ortodoxas (Palavra de Deus, graça, revelação) rejeitando o liberalismo, mas sem fundamentalismo','Defende a inerrância bíblica plena','É idêntica ao fundamentalismo'],correct:1,explain:'Barth rejeitou o liberalismo protestante (que identificava cultura/progresso com o Reino). Reafirmou: Deus é "totalmente Outro", revelado unicamente em Jesus Cristo.',ref:'Karl Barth, Carta aos Romanos (1919) / Dogmática Eclesiástica'},
+  {type:'mc',q:'O que é a "via negativa" (apofática) na teologia?',opts:['Negar a existência de Deus','Conhecer Deus pelo que Ele NÃO é (não limitado, não corpóreo, não temporal) — pois a realidade divina supera toda linguagem positiva','A teologia que nega os milagres','Rejeição da metafísica'],correct:1,explain:'Via apofática (teologia negativa): Deus transcende toda categoria humana. Dizemos o que Deus não é. Dionísio Areopagita e Gregório de Nissa desenvolveram esta tradição.',ref:'Dionísio Areopagita / Teologia Mística'},
+  {type:'mc',q:'Qual concílio ecumênico definiu a doutrina das duas naturezas (humana e divina) em Cristo sem mistura, confusão, divisão ou separação?',opts:['Niceia (325)','Éfeso (431)','Calcedônia (451)','Constantinopla II (553)'],correct:2,explain:'O Concílio de Calcedônia (451) formulou o "Horos" calcedonense: Cristo é uma Pessoa em duas naturezas, sem mistura, confusão, divisão ou separação — a definição cristológica clássica.',ref:'Concílio de Calcedônia, 451 d.C.'},
+  {type:'mc',q:'O que é o "Sitz im Lesen" (situação na leitura) na hermenêutica contemporânea?',opts:['A situação do leitor atual que inevitavelmente influencia como o texto é lido e interpretado','O contexto geográfico do texto','A língua original do texto','Igual ao Sitz im Leben'],correct:0,explain:'Além do Sitz im Leben (contexto original), há o Sitz im Lesen — o horizonte do leitor. Gadamer: toda interpretação é fusão de horizontes (texto + leitor). Base da hermenêutica pós-moderna.',ref:'Gadamer, Verdade e Método / Hans Robert Jauss'},
+  {type:'mc',q:'O que caracteriza a "pneumatologia" como disciplina teológica?',opts:['Estudo da oração','Estudo dos sacramentos','Estudo dos anjos','Estudo do Espírito Santo: sua pessoa, obras e manifestações na Igreja e no crente'],correct:3,explain:'Pneumatologia (pneuma = espírito em grego): ramo da teologia sistemática que estuda a terceira Pessoa da Trindade — identidade, processão, obras e dons do Espírito Santo.',ref:'João 14-16 / Teologia Sistemática'},
+  {type:'mc',q:'Qual foi o contributo específico de Agostinho à doutrina do pecado original?',opts:['Limitou o pecado ao corpo','Negou o pecado original','Formulou a transmissão do pecado e da culpa adâmica a toda a humanidade por geração biológica, afetando vontade e razão','Propôs que só Adão pecou'],correct:2,explain:'Agostinho (contra Pelágio) ensinou que toda a humanidade pecou "em Adão", transmitindo culpa e natureza corrompida. A vontade está cativa — só a graça liberta.',ref:'Agostinho, De Peccato Originali / séc. V'},
+  {type:'mc',q:'O que é "kerigma" na teologia do NT?',opts:['O ensino sistemático da fé','O núcleo da proclamação apostólica: morte, ressurreição e senhoria de Jesus Cristo','A liturgia semanal','As parábolas de Jesus'],correct:1,explain:'Kerigma (κήρυγμα) = proclamação. C.H. Dodd identificou o kerigma apostólico: Cristo morreu pelos pecados, foi sepultado, ressuscitou, foi exaltado e virá de novo.',ref:'C.H. Dodd, The Apostolic Preaching (1936) / 1 Coríntios 15:3-5'},
+  {type:'mc',q:'O "Decálogo" em Êxodo 20 é estruturado em quantas tábuas segundo a tradição reformada?',opts:['Duas tábuas: deveres para com Deus (1-4) e deveres para com o próximo (5-10)','Três tábuas temáticas','Quatro grupos de mandamentos','Uma tábua com dez mandamentos'],correct:0,explain:'A tradição reformada divide o Decálogo em duas tábuas: a primeira (1-4) sobre o amor a Deus; a segunda (5-10) sobre o amor ao próximo — estrutura que Jesus confirma em Marcos 12:30-31.',ref:'Êxodo 20 / Calvino, Institutos II.8'},
+  {type:'mc',q:'Qual hermenêutica é central para a Teologia Reformada na interpretação do AT?',opts:['Leitura puramente histórica sem NT','O AT é irrelevante para cristãos','Alegoria pura','A interpretação cristotélica: todo o AT aponta para Cristo como seu telos (fim/cumprimento)'],correct:3,explain:'"Cristo é o fim (telos) da lei" (Rm 10:4). A hermenêutica cristotélica lê o AT esperando que aponte para Cristo — prefigurações tipológicas, profecias e promessas cumpridas.',ref:'Lucas 24:27 / Romanos 10:4'},
+  {type:'mc',q:'O que é o "minúsculo 33" no textual crítico do NT?',opts:['Um manuscrito grego do séc. IX chamado "rainha das cursivas" por sua qualidade textual','O 33º capítulo do NT','Código para o texto alexandrino','O menor fragmento do NT'],correct:0,explain:'O minúsculo 33 (séc. IX) é considerado o melhor dos manuscritos minúsculos do NT — chamado "queen of the minuscules". Representa o tipo textual alexandrino.',ref:'Crítica Textual do NT / Bruce Metzger'},
+  {type:'mc',q:'A "confessio augustana" (Confissão de Augsburgo, 1530) foi redigida por:',opts:['Ulrico Zuínglio','Martinho Lutero','Filipe Melanchthon','João Calvino'],correct:2,explain:'Melanchthon redigiu os 28 artigos apresentados ao Imperador Carlos V. Lutero estava proibido de entrar no império. É o documento fundante do luteranismo.',ref:'Confissão de Augsburgo, 1530 / Melanchthon'},
+  {type:'mc',q:'Qual é o argumento central do livro de Romanos segundo a maioria dos exegetas?',opts:['A justiça de Deus revelada no Evangelho de Jesus Cristo, justificando pela fé judeus e gentios igualmente','A ética cristã cotidiana','A escatologia','A doutrina da predestinação'],correct:0,explain:'"A justiça de Deus se revela de fé em fé" (Rm 1:17). Paulo demonstra que todos — judeus e gentios — são culpados, e que Deus justifica a ambos gratuitamente pela fé em Cristo.',ref:'Romanos 1:16-17 / 3:21-26'},
+  {type:'mc',q:'O que é o "iluminismo divino" na gnoseologia de Agostinho?',opts:['A luz solar como metáfora da graça','A mente humana precisa da iluminação direta de Deus para conhecer verdades eternas e imutáveis','O conhecimento empírico é suficiente','Deus revela apenas na Bíblia'],correct:1,explain:'Agostinho: as verdades imutáveis (matemática, ética, Deus) não vêm da experiência. A mente as conhece pela iluminação divina — Deus como "Mestre interior" (De Magistro).',ref:'Agostinho, De Magistro / Solilóquios'},
+  {type:'mc',q:'O que é o "princípio de caridade" na interpretação bíblica e filosófica?',opts:['Interpretação alegórica','Dar dinheiro a quem precisa','Interpretar o texto (ou interlocutor) na forma mais favorável possível antes de criticar','Método de leitura piedosa'],correct:2,explain:'O princípio de caridade hermenêutico: antes de refutar, leia o argumento alheio na sua versão mais forte. Aplicado à Bíblia: ler textos difíceis na melhor luz possível.',ref:'Hermenêutica / Donald Davidson'},
+  {type:'mc',q:'A "doutrina da providência" distingue "providência geral" de "providência especial" porque:',opts:['Especial é milagres; geral é lei natural','São idênticas','Geral: sustento de toda a criação; especial: cuidado particular de Deus com Seu povo e os eventos da redenção','Geral é AT; especial é NT'],correct:2,explain:'Providência geral: Deus sustenta, preserva e governa toda a criação. Providência especial: intervenção particular no fluxo da história para cumprir propósitos redentivos.',ref:'Mateus 6:26-30 / Calvino, Institutos I.16-17'},
+
+  {type:'mc',q:'O que é a "hypostasis" na teologia trinitária de Calcedônia?',opts:['Pessoa individual subsistente — cada uma das três distinções pessoais na Trindade','Natureza divina','Vontade divina','Substância comum das três Pessoas'],correct:0,explain:'"Hypostasis" (ὑπόστασις) = pessoa subsistente. Na Trindade: três hypostaseis (Pai, Filho, Espírito) numa ousia (substância/natureza). Confundi-los era erro dos modalistass.',ref:'Concílio de Calcedônia / Teologia Trinitária'},
+  {type:'mc',q:'O que é o "sensus plenior" na hermenêutica bíblica?',opts:['O sentido literal do texto','Um sentido mais pleno que Deus pretendia além do que o autor humano conscientmente pretendia','O sentido alegórico','O sentido moral do texto'],correct:1,explain:'Sensus plenior (sentido mais pleno): Deus como autor divino pode ter intencionado um significado além do que o autor humano compreendia — especialmente em profecias messiânicas.',ref:'Romanos 15:4 / Hermenêutica Bíblica'},
+  {type:'mc',q:'A doutrina da "perseverança dos santos" (Calvino) difere da "segurança eterna" popular porque:',opts:['Calvino rejeitava a perseverança','São idênticas','Perseverança: os eleitos verdadeiramente perseveram até o fim; segurança popular: qualquer conversão garante salvação independentemente da vida','"Segurança eterna" é mais rigorosa'],correct:2,explain:'A perseverança calvinista é robusta: os verdadeiramente eleitos perseveram. A "segurança eterna" popular pode ser mal usada para garantir salvação a conversões superficiais.',ref:'João 10:28 / Calvino, Institutos III.24'},
+  {type:'mc',q:'O que é o "gênero apocalíptico" na literatura bíblica?',opts:['Gênero literário que usa visões simbólicas, linguagem codificada e dualismo cósmico para revelar realidades transcendentes','Somente o livro do Apocalipse','Profecias de destruição','Textos sobre o apocalipse nuclear'],correct:0,explain:'O gênero apocalíptico (Daniel, Apocalipse, partes de Ezequiel, Zacarias) usa visões dramáticas, bestas, números simbólicos e cenas celestiais para revelar verdades sobre a história e o fim.',ref:'Daniel 7 / Apocalipse 1:1 / Teologia do NT'},
+  {type:'mc',q:'O "Covenant of Redemption" (Pacto de Redenção ou "Pactum Salutis") refere-se a:',opts:['A aliança com Noé','O acordo eterno intratrinitário pelo qual o Filho concordou em encarnar e redimir os eleitos','A aliança da Reforma','O novo pacto em Cristo'],correct:1,explain:'Teologia federal reformada: antes da criação, as três Pessoas da Trindade firmaram um "pactum salutis" — o Pai envia, o Filho se oferece, o Espírito aplica a redenção.',ref:'João 6:37-40 / Teologia Federal'},
+  {type:'mc',q:'O que significa "comunicatio idiomatum" na cristologia clássica?',opts:['O ensino dos apóstolos','Comunicação entre as igrejas','A troca de propriedades: os atributos de ambas as naturezas são atribuídos à única Pessoa de Cristo','Trindade como comunicação interna'],correct:2,explain:'"Communicatio idiomatum" (troca das propriedades): porque Cristo é uma única Pessoa com duas naturezas, diz-se que "Deus sofreu" e "o homem criou o universo" — referindo-se à única Pessoa.',ref:'João 1:14 / Concílio de Éfeso / Calcedônia'},
+]
+};
+
+return{show:show,showDiff:showDiff,showAbout:showAbout,start:start,next:next,confirmQuit:confirmQuit,resume:resume,quit:quit,showLB:showLB,showLBAfterGame:showLBAfterGame,lbTab:lbTab,saveName:saveName,skipName:skipName,toggleMute:function(){var m=Audio.toggleMute();document.getElementById('mute-btn').textContent=m?'🔇':'🔊';}
+};
+})();
+</script>
+</body>
+</html>
