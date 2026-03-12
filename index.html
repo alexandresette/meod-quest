@@ -137,6 +137,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Press Start 2P',mo
 .lb-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .lb-pts{font-size:8px;color:var(--or2);min-width:56px;text-align:right;}
 .lb-time{font-size:6px;color:#888;min-width:42px;text-align:right;}
+.lb-correct{font-size:7px;color:#2E7D32;min-width:36px;text-align:right;font-weight:bold;}
 .lb-empty{font-size:7px;color:#aaa;text-align:center;padding:28px;opacity:.7;}
 
 /* ════ HUD ════ */
@@ -415,6 +416,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Press Start 2P',mo
       <button class="lbtab" id="lbtab-teologo" onclick="G.lbTab('teologo')">⚡ MEOD (מְאֹד)</button>
     </div>
     <div class="lb-list" id="lb-list"></div>
+    <button class="pbtn" style="font-size:7px;background:#fff;color:#c00;border-color:#c00;box-shadow:2px 2px 0 #c00;" onclick="G.clearLB()">🗑 LIMPAR</button>
     <button class="pbtn pbtn-blue" onclick="G.show('menu-screen')">← VOLTAR</button>
   </div>
 </div>
@@ -761,9 +763,9 @@ var LB={
   key:function(diff){return'mq_lb_'+diff;},
   load:function(diff){try{return JSON.parse(localStorage.getItem(LB.key(diff)))||[];}catch(e){return[];}},
   save:function(diff,arr){try{localStorage.setItem(LB.key(diff),JSON.stringify(arr));}catch(e){}},
-  add:function(diff,name,pts,secs){
+  add:function(diff,name,pts,secs,correct,total){
     var arr=LB.load(diff);
-    arr.push({name:name,pts:pts,secs:secs,date:new Date().toLocaleDateString('pt-BR')});
+    arr.push({name:name,pts:pts,secs:secs,correct:correct,total:total,date:new Date().toLocaleDateString('pt-BR')});
     arr.sort(function(a,b){return b.pts-a.pts||(a.secs-b.secs);});
     if(arr.length>20)arr=arr.slice(0,20);
     LB.save(diff,arr);
@@ -1391,6 +1393,12 @@ function showLBAfterGame(){
   lbTab(S.diff||'raso');
   show('lb-screen');
 }
+function clearLB(){
+  if(!confirm('Limpar todos os recordes de "'+lbCurrentTab+'"?')) return;
+  LB.save(lbCurrentTab,[]);
+  lbTab(lbCurrentTab);
+  SFX.click();
+}
 function lbTab(diff){
   SFX.click();
   lbCurrentTab=diff;
@@ -1412,9 +1420,11 @@ function lbTab(diff){
     row.className='lb-row'+(i<3?' '+rowCls[i]:'');
     var mins=Math.floor((entry.secs||0)/60);
     var secs=((entry.secs||0)%60).toString().padStart(2,'0');
+    var corr=(entry.correct!==undefined?entry.correct+'/'+entry.total:'');
     row.innerHTML='<span class="lb-rank">'+(i<3?medals[i]:'#'+(i+1))+'</span>'
       +'<span class="lb-name">'+escHtml(entry.name)+'</span>'
       +'<span class="lb-time">'+mins+':'+secs+'</span>'
+      +(corr?'<span class="lb-correct">'+corr+'</span>':'')
       +'<span class="lb-pts">'+entry.pts+' pts</span>';
     list.appendChild(row);
   });
@@ -1581,7 +1591,7 @@ function endGame(){
   var mins=Math.floor(S.elapsed/60),secs=(S.elapsed%60).toString().padStart(2,'0');
   document.getElementById('res-pts').textContent='⏱ '+mins+':'+secs+' · 🏅 '+pts+' pontos';
   document.getElementById('res-verse').textContent=verse;
-  pendingResult={diff:S.diff,pts:pts,secs:S.elapsed};
+  pendingResult={diff:S.diff,pts:pts,secs:S.elapsed,correct:S.score,total:S.qs.length};
   show('result-screen');
   // Ask name after short delay
   if(pts>0){setTimeout(function(){showNameModal(pts);},600);}
@@ -1598,7 +1608,7 @@ function showNameModal(pts){
 function saveName(){
   var name=(document.getElementById('name-input').value||'').trim();
   if(!name){document.getElementById('name-input').focus();return;}
-  if(pendingResult){LB.add(pendingResult.diff,name,pendingResult.pts,pendingResult.secs);}
+  if(pendingResult){LB.add(pendingResult.diff,name,pendingResult.pts,pendingResult.secs,pendingResult.correct,pendingResult.total);}
   document.getElementById('name-modal').classList.remove('on');
   pendingResult=null;
   SFX.click();
