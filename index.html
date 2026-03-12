@@ -416,7 +416,6 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Press Start 2P',mo
       <button class="lbtab" id="lbtab-teologo" onclick="G.lbTab('teologo')">⚡ MEOD (מְאֹד)</button>
     </div>
     <div class="lb-list" id="lb-list"></div>
-    <button class="pbtn" style="font-size:7px;background:#fff;color:#c00;border-color:#c00;box-shadow:2px 2px 0 #c00;" onclick="G.clearLB()">🗑 LIMPAR</button>
     <button class="pbtn pbtn-blue" onclick="G.show('menu-screen')">← VOLTAR</button>
   </div>
 </div>
@@ -1392,12 +1391,6 @@ function showLB(){
 function showLBAfterGame(){
   lbTab(S.diff||'raso');
   show('lb-screen');
-}
-function clearLB(){
-  if(!confirm('Limpar todos os recordes de "'+lbCurrentTab+'"?')) return;
-  LB.save(lbCurrentTab,[]);
-  lbTab(lbCurrentTab);
-  SFX.click();
 }
 function lbTab(diff){
   SFX.click();
