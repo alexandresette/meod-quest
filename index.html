@@ -760,7 +760,7 @@ var G = (function(){
 
 // ══════════════ LEADERBOARD STORAGE ══════════════
 var LB={
-  key:function(diff){return'mq_lb_'+diff;},
+  key:function(diff){return'mq_lb_v2_'+diff;},
   load:function(diff){try{return JSON.parse(localStorage.getItem(LB.key(diff)))||[];}catch(e){return[];}},
   save:function(diff,arr){try{localStorage.setItem(LB.key(diff),JSON.stringify(arr));}catch(e){}},
   add:function(diff,name,pts,secs,correct,total){
